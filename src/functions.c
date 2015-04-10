@@ -91,13 +91,13 @@ void check(unsigned char *buf)
         int i, index;
         for (i=0; i<0x15; i++)
         {
-                index = check[0] ^ buf[i];
-                check[0] = check[1] ^ table[index*2+1];
-                check[1] = table[index*2];
+        	index = check[0] ^ buf[i];
+        	check[0] = check[1] ^ table[index*2+1];
+        	check[1] = table[index*2];
         }
         for (i=0; i<0x17; i++)
                 buf[i] = encode(buf[i]);
-				memcpy(checksum, buf, 23);
+	memcpy(checksum, buf, 23);
 				
 }
 
@@ -663,7 +663,7 @@ void GetInfoFromDevice()
 
 
 
-	unsigned char  checkinfo[23];
+	unsigned char checkinfo[23] = 0x00;  //赋初始值0，在某些编译器上不会自动赋初始值，导致最后两字节校验码出错
 
 	memcpy(checkinfo+5, ip, 4);
 	memcpy(netinfo+1, ip, 4);
