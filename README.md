@@ -15,3 +15,5 @@ scutclient旧版本（1.4以下），那么就不用这一步
 
 最后，可以运行make package/scutclient/compile V=s对scutclient进行编译，
 编译完之后可以在/bin/对应的处理器/packages中找到
+
+若有其他疑问，可以加群262939451获取更多帮助。
