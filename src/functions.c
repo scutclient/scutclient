@@ -663,7 +663,7 @@ void GetInfoFromDevice()
 
 
 
-	unsigned char checkinfo[23] = 0x00;  //赋初始值0，在某些编译器上不会自动赋初始值，导致最后两字节校验码出错
+	unsigned char checkinfo[23] = {0x00};  //赋初始值0，在某些编译器上不会自动赋初始值，导致最后两字节校验码出错
 
 	memcpy(checkinfo+5, ip, 4);
 	memcpy(netinfo+1, ip, 4);
