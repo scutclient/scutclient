@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/scutclient
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=SCUT 802.1X client by Forward
+  TITLE:=SCUT 802.1X client by Forward and modified by 7forz
  DEPENDS:=libc 
 endef
 

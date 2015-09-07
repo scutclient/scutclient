@@ -19,10 +19,10 @@ char *DeviceName;
 int main(int argc, char *argv[])
 {
 	int client=0;
-	printf("\n***************************************************************\n\n"
-		"SCUTclient is based on njit8021xclient which is made by liuqun.\n"
-		"Welcome to report bugs at Router of SCUT QQ group 262939451.\n\n"
-		"\n***************************************************************\n");
+	printf("\n***************************************************************\n\n");
+	printf("SCUTclient is based on njit8021xclient which is made by liuqun.\n");
+	printf("Welcome to report bugs at Router of SCUT QQ group 262939451.\n\n");
+	printf("\n***************************************************************\n");
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
 		printf("Sorry,it is unroot.\n");
@@ -31,16 +31,16 @@ int main(int argc, char *argv[])
 
 	/* 检查命令行参数格式 */
 	if (argc<2 || argc>5) {
-		printf("Command is Illegal ,You can input command like this:\n"
-		"    scutclient username\n"
-		"    scutclient username password \n"
-		"    scutclient username password Interface_Of_Wan\n"
-		"    scutclient inode username\n"
-		"    scutclient inode username password \n"
-		"    scutclient inode username password Interface_Of_Wan\n"
-		"    scutclient digital username\n"
-		"    scutclient digital username password \n"
-		"    scutclient digital username password Interface_Of_Wan\n");
+		printf("Command is Illegal ,You can input command like this:\n");
+		printf("    %s username\n", argv[0]);
+		printf("    %s username password \n", argv[0]);
+		printf("    %s username password Interface_Of_Wan\n", argv[0]);
+		printf("    %s inode username\n", argv[0]);
+		printf("    %s inode username password \n", argv[0]);
+		printf("    %s inode username password Interface_Of_Wan\n", argv[0]);
+		printf("    %s digital username\n", argv[0]);
+		printf("    %s digital username password \n", argv[0]);
+		printf("    %s digital username password Interface_Of_Wan\n", argv[0]);
 		exit(-1);
 	} 
 
@@ -69,11 +69,16 @@ int main(int argc, char *argv[])
 			char   buf[32]={0};
 			char   tmp[32]={0} ;
 			int	count = 0;
-
+			//memset( buf, '/0', sizeof(buf) );
 			stream = popen( "uci get network.wan.ifname", "r" );
-			count = fread( buf, sizeof(char), sizeof(buf), stream); 
-			DeviceName=tmp;
-			memcpy(DeviceName, buf , count-1);
+			if(stream == NULL)
+				printf("Command error : uci get network.wan.ifname not found , this command is used on OpenWRT");
+			else
+			{
+				count = fread( buf, sizeof(char), sizeof(buf), stream); 
+				DeviceName=tmp;
+				memcpy(DeviceName, buf , count-1);
+			}
 			pclose( stream ); 
 		} 
 	}

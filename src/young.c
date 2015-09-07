@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h> 
 #include <pcap.h>
-#define PRINTINFO 1 
+//#define PRINTINFO 1  //不显示详细信息
 extern char *UserName;
 extern char *Password;
 extern char ipaddrinfo[16];
@@ -34,7 +34,9 @@ void SendYoungStartPkt()
 	,0x68,0x94,0x68,0x94,0x68,0x63,0x96,0x91,0x61,0x9a,0xa7,0x94,0x9f,0xab,0x00,0x00
 	,0x13,0x11,0x18,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00};
+	
 	memcpy(checksuminfo, checksum,23);
+
 	// Fill Ethernet header
 	memcpy(Packet, EthHeader,14);
 
@@ -45,7 +47,7 @@ void SendYoungStartPkt()
 	Packet[17] = 0x00;
 
 	for(packetlen=18;packetlen<=148;packetlen++)
-	Packet[packetlen] =checksuminfo[packetlen-18];// Length=0x0000
+		Packet[packetlen] =checksuminfo[packetlen-18];// Length=0x0000
 
 #ifdef PRINTINFO
 printf("\n*****************Start info***************************\n");
@@ -55,7 +57,7 @@ for(m=0;m<=packetlen-1;m++)
 n++;
 if(n==17)
 {
-printf("\n");
+//printf("\n");
 n=1;
 }
 printf("%02x ",Packet[m]);
@@ -111,25 +113,26 @@ void SendYoungResponseIdentity(const uint8_t request[])
 	,0x68,0x94,0x68,0x94,0x68,0x63,0x96,0x91,0x61,0x9a,0xa7,0x94,0x9f,0xab,0x00,0x00
 	,0x13,0x11,0x18,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00};
-	memcpy(checksuminfo, checksum,23);
+	memcpy(checksuminfo, checksum,23);  // 填入functions.c的值     modified by 7forz 
 	uint8_t ipinfo[100]=
-	{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x23,0xff,0xff
+	{0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x23,0x30,0xff,0xff
 	,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x23,0x32,0x2e,0x31
-	,0x2e,0x33,0x23,0x45,0x58,0x54,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+	,0x2e,0x35,0x23,0x45,0x58,0x54,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00};
 	memcpy(ipinfo, UserName, userlen);
-	ipinfo[userlen]=0x23;
-	ipinfo[1+userlen]=0x30;
-	memcpy(ipinfo+2+userlen, ipaddrinfo, iplen);
-	ipinfo[2+userlen+iplen]=0x23;
-	ipinfo[3+userlen+iplen]=0x32;
-	ipinfo[4+userlen+iplen]=0x2e;
-	ipinfo[5+userlen+iplen]=0x31;
-	ipinfo[6+userlen+iplen]=0x2e;
-	ipinfo[7+userlen+iplen]=0x33;
+	ipinfo[userlen]=0x23;  //#
+	ipinfo[1+userlen]=0x30;  //0
+	memcpy(2+userlen+ipinfo, ipaddrinfo, iplen);
+	ipinfo[2+userlen+iplen]=0x23;  //#
+	ipinfo[3+userlen+iplen]=0x34;  //4
+	ipinfo[4+userlen+iplen]=0x2e;  //.
+	ipinfo[5+userlen+iplen]=0x31;  //1
+	ipinfo[6+userlen+iplen]=0x2e;  //.   跟随版本号变化
+	ipinfo[7+userlen+iplen]=0x35;  //5   modified by 7forz 
+	ipinfo[8+userlen+iplen]=0x23;  //#
 	uint16_t eaplen;
 	// Fill Ethernet header
 	memcpy(Packet, EthHeader, 14);
@@ -144,12 +147,17 @@ void SendYoungResponseIdentity(const uint8_t request[])
 	Packet[22] = /*(EAP_Type)*/ IDENTITY;	// Type
 	// Type-Data
 	packetlen = 23;
-	for(packetlen=23;packetlen<=30+userlen+iplen;packetlen++)
-		Packet[packetlen] =ipinfo[packetlen-23];
-	for(packetlen=31+userlen+iplen;packetlen<=162+userlen+iplen;packetlen++)
-		Packet[packetlen] =checksuminfo[packetlen-31-userlen-iplen];
+	for(packetlen=23;packetlen<=35+userlen+iplen;packetlen++)
+		Packet[packetlen] =ipinfo[packetlen-23];  //从23到(35+12+14)=61
+	
+	/* 7forz   从Packet[23]开始是   用户名+#0+IP+#4.1.5#EXT  按我的来算是到从Packet[61] */
+	
+	//for(packetlen=31+userlen+iplen;packetlen<=162+userlen+iplen;packetlen++)   原来的2
+	for(packetlen=36+userlen+iplen;packetlen<=166+userlen+iplen;packetlen++)  //从Packet[62]到Packet[192]共131项
+		Packet[packetlen] =checksuminfo[packetlen-36-userlen-iplen];
 	// 补填前面留空的两处Length
-	eaplen = htons(13+userlen+iplen);
+	//eaplen = htons(13+userlen+iplen);  //TODO:这里可能会有错
+	eaplen = htons(13+5+userlen+iplen);  //这里加5试试看  7forz
 	memcpy(Packet+16, &eaplen, sizeof(eaplen));// Length
 	memcpy(Packet+20, &eaplen, sizeof(eaplen));// Length
 //			memcpy(Packet, MultcastAddr, 6);
@@ -164,7 +172,7 @@ for(m=0;m<=packetlen-2;m++)
 n++;
 if(n==17)
 {
-printf("\n");
+//printf("\n");
 n=1;
 }
 printf("%02x ",Packet[m]);
@@ -179,7 +187,7 @@ printf("\n");
 //	pcap_next_ex(adhandle, &header, &captured);
 //	pcap_dump((unsigned char *)dumpfile, header, captured);
 //	pcap_dump_flush((unsigned char *)dumpfile);
-
+	
 //	pcap_dump((unsigned char *)dumpfile, header, captured);
 //	return;
 }
@@ -230,7 +238,7 @@ for(m=0;m<=packetlen-2;m++)
 n++;
 if(n==17)
 {
-printf("\n");
+//printf("\n");
 n=1;
 }
 printf("%02x ",Packet[m]);
@@ -271,27 +279,36 @@ void SendYoungResponseMD5(const uint8_t request[])
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 	,0x00,0x00,0x00,0x00};
+	
+	//格式：密码（16字节）+用户名+#0+IP+#4.1.5#EXT
+	
 	int k=0;
-	memcpy(md5info, Password, 16);
+	memcpy(md5info, Password, 16);  //md5info[0~15] 密码（16字节）
 	if(strlen(Password)<=16)
-	for(k=strlen(Password);k<=15;k++)
-	md5info[k] = 0x0;
-	memcpy(md5info+16, UserName, userlen);
-	md5info[17+userlen]=0x23;
-	md5info[18+userlen]=0x30;
-	memcpy(md5info+19+userlen, ipaddrinfo, iplen);
-	md5info[19+userlen+iplen]=0x23;
-	md5info[20+userlen+iplen]=0x32;
-	md5info[21+userlen+iplen]=0x2e;
-	md5info[22+userlen+iplen]=0x31;
-	md5info[23+userlen+iplen]=0x2e;
-	md5info[24+userlen+iplen]=0x33;
-	md5info[25+userlen+iplen]=0x23;
-	md5info[26+userlen+iplen]=0x45;
-	md5info[27+userlen+iplen]=0x58;
-	md5info[28+userlen+iplen]=0x54;
-	md5info[16+userlen]=md5info[34+userlen];
+		for(k=strlen(Password);k<=15;k++)
+			md5info[k] = 0x0;  //不足的填0x00
+	
+	memcpy(md5info+16, UserName, userlen);  //md5info[16~27] 用户名
+	md5info[16+userlen]=0x23;  //#  md5info[28]
+	md5info[17+userlen]=0x30;  //0  md5info[29]
+	
+	memcpy(md5info+18+userlen, ipaddrinfo, iplen);  //IP  md5info[30~43]
+	md5info[18+userlen+iplen]=0x23;  //#
+	md5info[19+userlen+iplen]=0x34;  //4
+	md5info[20+userlen+iplen]=0x2e;  //.
+	md5info[21+userlen+iplen]=0x31;  //1
+	md5info[22+userlen+iplen]=0x2e;  //.
+	md5info[23+userlen+iplen]=0x35;  //5
+	md5info[24+userlen+iplen]=0x23;  //#
+	md5info[25+userlen+iplen]=0x45;  //E
+	md5info[26+userlen+iplen]=0x58;  //X
+	md5info[27+userlen+iplen]=0x54;  //T  到这里是md5info[53]
+	
+	//md5info[16+userlen]=md5info[34+userlen];  //md5info[28]=md5info[46]=0x2e??  这是什么？
 	uint16_t eaplen;
+	
+
+	
 	// Fill Ethernet header
 	memcpy(Packet, EthHeader, 14);
 	// 802,1X Authentication
@@ -303,16 +320,21 @@ void SendYoungResponseMD5(const uint8_t request[])
 		// {
 	Packet[18] = /*(EAP_Code)*/ RESPONSE;// Code
 	Packet[19] = request[19];		// ID
-	//Packet[20~21]留空
+	//Packet[20~21]留空  Length
 
 	Packet[22] = /*(EAP_Type)*/ MD5;	// Type
-	Packet[23] = 16;		// Value-Size: 16 Bytes
-	for(packetlen=24;packetlen<=52+userlen+iplen;packetlen++)
-		Packet[packetlen] =md5info[packetlen-24];
-	for(;packetlen<=184+userlen+iplen;packetlen++)
-		Packet[packetlen] =checksuminfo[packetlen-53-userlen-iplen];
-
-	eaplen =htons(35+userlen+iplen);
+	Packet[23] = 16;		// Value-Size: 16 Bytes   0x10
+	
+	
+	
+	for(packetlen=24;packetlen<=52+userlen+iplen;packetlen++)  //Packet[24~78]
+		Packet[packetlen] = md5info[packetlen-24];
+	
+	for(;packetlen<=183+userlen+iplen;packetlen++)    //共Packet[209]
+		//Packet[packetlen] = checksuminfo[packetlen-53-userlen-iplen];  modified by 7forz
+		Packet[packetlen] = 0x00;
+	
+	eaplen =htons(35+userlen+iplen); //TODO:这里可能会有错
 	memcpy(Packet+16, &eaplen, sizeof(eaplen));// Length
 	memcpy(Packet+20, &eaplen, sizeof(eaplen));// Length
 	packetlen--;
@@ -325,7 +347,7 @@ for(m=0;m<=packetlen-2;m++)
 n++;
 if(n==17)
 {
-printf("\n");
+//printf("\n");
 n=1;
 }
 printf("%02x ",Packet[m]);
@@ -376,7 +398,7 @@ for(m=0;m<=packetlen-2;m++)
 n++;
 if(n==17)
 {
-printf("\n");
+//printf("\n");
 n=1;
 }
 printf("%02x ",Packet[m]);
