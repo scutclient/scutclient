@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h> 
 #include <pcap.h>
-#define PRINTINFO 1
+//#define PRINTINFO 1
 
 
 void SendDigitalStartPkt();
@@ -106,10 +106,7 @@ printf("%02x ",Packet[m]);
 }
 printf("\n");
 #endif
-	uint8_t	msgbuf[128];
-	memcpy(msgbuf,UserName,userlen);
-	memcpy(msgbuf,request+24,4);
-	MD5Calc(msgbuf, userlen+4, netinfo+17);
+
 	return;
 }
 
@@ -117,7 +114,7 @@ void SendDigitalResponseMD5(const uint8_t request[])
 {
 	uint16_t eaplen;
 	size_t   packetlen;
-	memset(Packet, 0x00,215);//fill 0x00
+	memset(Packet, 0x00,214);//fill 0x00
 	
 	packetlen = 14+4+22+userlen; // ethhdr+EAPOL+EAP+userlen
 

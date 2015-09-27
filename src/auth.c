@@ -12,7 +12,7 @@ int Authentication(int client);
 
 //#include <stdbool.h>
 
-#include "pcap.h"
+#include <pcap.h>
 
 //#include <sys/ioctl.h>
 //#include <net/if.h>
@@ -67,9 +67,7 @@ uint8_t precaptured=0xff;
 extern char *UserName;
 extern char *Password;
 extern char *DeviceName;
-extern int	pcap_sendpacket(pcap_t *, const u_char *, int);
-extern int	pcap_dump_flush(pcap_dumper_t *);
-extern void	pcap_dump(u_char *, const struct pcap_pkthdr *, const u_char *);
+
 /**
  * 函数：Authentication()
  *
@@ -143,8 +141,9 @@ int Authentication(int client)
 */	
 
 
-	struct pcap_pkthdr *header;
-	const u_char 	*captured;
+	pcap_sendpacket(adhandle, Packet, packetlen);
+	const struct pcap_pkthdr *header;
+	const uint8_t	*captured;
 	if(client==1)
 	{
 		printf("SCUTclient Mode.\n");
@@ -190,65 +189,65 @@ void Pcap_YoungHandler(unsigned char *param, const struct pcap_pkthdr *header,co
 	// 根据收到的Request，回复相应的Response包
 	if ((EAP_Code)captured[18] == REQUEST)
 	{
-		if(precaptured!=captured[22])
+	if(precaptured!=captured[22])
+	{
+		switch ((EAP_Type)captured[22])
 		{
-			switch ((EAP_Type)captured[22])
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
+			SendYoungResponseIdentity(captured);
+//			pcap_dump((unsigned char *)dumpfile, header, captured);	
+			printf("[%d] SCUTclient: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
 			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				SendYoungResponseIdentity(captured);
-	//			pcap_dump((unsigned char *)dumpfile, header, captured);	
-				printf("[%d] SCUTclient: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				if(times==0)
-				{
-					LastSendResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] SCUTclient: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{
-					SendYoungResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] SCUTclient: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
+				LastSendResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] SCUTclient: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
-		precaptured=captured[22];
+			else
+			{
+				SendYoungResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] SCUTclient: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
+			exit(-1);
+			break;
 		}
-		else
+	precaptured=captured[22];
+	}
+	else
+	{
+		switch ((EAP_Type)captured[22])
 		{
-			switch ((EAP_Type)captured[22])
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);	
+			printf("[%d] SCUTclient: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
 			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);	
-				printf("[%d] SCUTclient: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				if(times==0)
-				{
-					printf("[%d] SCUTclient: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{
-					printf("[%d] SCUTclient: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
+				printf("[%d] SCUTclient: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
+			else
+			{
+				printf("[%d] SCUTclient: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
+			exit(-1);
+			break;
 		}
+	}
 	}
 	else if ((EAP_Code)captured[18] == FAILURE)
 	{	// 处理认证失败信息
@@ -259,6 +258,7 @@ void Pcap_YoungHandler(unsigned char *param, const struct pcap_pkthdr *header,co
 		const char *msg = (const char*) &captured[24];
 		printf("[%d] Server: Failure.\n", (EAP_ID)captured[19]);
 		printf("%s\n", msg);
+		savedump=1;
 		if (times>1)
 		{
 			times--;
@@ -294,7 +294,6 @@ void Pcap_YoungHandler(unsigned char *param, const struct pcap_pkthdr *header,co
 		pcap_dump(param, header, captured);
 		pcap_dump_flush(dumpfile);
 		savedump=0;
-		return ;
 	}
 	// 发送
 	pcap_sendpacket(adhandle, Packet, packetlen);
@@ -315,83 +314,85 @@ void Pcap_iNodeHandler(unsigned char *param, const struct pcap_pkthdr *header,co
 	if ((EAP_Code)captured[18] == REQUEST)
 	{
 	//the same packet is send
-		if(precaptured!=captured[22])
+	if(precaptured!=captured[22])
+	{
+		switch ((EAP_Type)captured[22])
 		{
-			switch ((EAP_Type)captured[22])
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
+			SendiNodeResponseIdentity(captured);
+//			pcap_dump((unsigned char *)dumpfile, header, captured);	
+			printf("[%d] iNode: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
 			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				SendiNodeResponseIdentity(captured);
-	//			pcap_dump((unsigned char *)dumpfile, header, captured);	
-				printf("[%d] iNode: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				if(times==0)
-				{
-					LastSendResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] iNode: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{
-					SendiNodeResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] iNode: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				case ALLOCATED:
-				printf("[%d] Server: Request Allocated!\n", (EAP_ID)captured[19]);
-				SendResponseAllocated(captured);
-				printf("[%d] iNode: Response Allocated.\n", (EAP_ID)captured[19]);
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
+				LastSendResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] iNode: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
-		precaptured=captured[22];
+			else
+			{
+				SendiNodeResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] iNode: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			break;
+			case ALLOCATED:
+			printf("[%d] Server: Request Allocated!\n", (EAP_ID)captured[19]);
+			SendResponseAllocated(captured);
+			printf("[%d] iNode: Response Allocated.\n", (EAP_ID)captured[19]);
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
+			exit(-1);
+			break;
 		}
-		else
+	precaptured=captured[22];
+	}
+	else
+	{
+		switch ((EAP_Type)captured[22])
 		{
-			switch ((EAP_Type)captured[22])
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
+			printf("[%d] iNode: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
 			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				printf("[%d] iNode: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				if(times==0)
-				{
-					printf("[%d] iNode: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{
-					printf("[%d] iNode: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				case ALLOCATED:
-				printf("[%d] iNode: Response Allocated.\n", (EAP_ID)captured[19]);
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
+				printf("[%d] iNode: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
+			else
+			{
+				printf("[%d] iNode: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			break;
+			case ALLOCATED:
+			printf("[%d] iNode: Response Allocated.\n", (EAP_ID)captured[19]);
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
+			exit(-1);
+			break;
 		}
+	}
 	}
 	else if ((EAP_Code)captured[18] == FAILURE)
 	{	// 处理认证失败信息
 		savedump=1;
 		uint8_t errtype = captured[22];
 		uint8_t msgsize = captured[23];
+
 		uint8_t infocode[2] = {captured[28],captured[29]};
 		const char *msg = (const char*) &captured[24];
 		printf("[%d] Server: Failure.\n", (EAP_ID)captured[19]);
 		printf("%s\n", msg);
+		savedump=1;
 		if (times>1)
 		{
 			times--;
@@ -427,7 +428,6 @@ void Pcap_iNodeHandler(unsigned char *param, const struct pcap_pkthdr *header,co
 		pcap_dump(param, header, captured);
 		pcap_dump_flush(dumpfile);
 		savedump=0;
-		return ;
 	}
 
 	// 发送
@@ -448,127 +448,105 @@ void Pcap_DigitalHandler(unsigned char *param, const struct pcap_pkthdr *header,
 	// 根据收到的Request，回复相应的Response包
 	if ((EAP_Code)captured[18] == REQUEST)
 	{
-		if(precaptured!=captured[22])
+	if(precaptured!=captured[22])
+	{
+		switch ((EAP_Type)captured[22])
 		{
-			switch ((EAP_Type)captured[22])
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
+			SendDigitalResponseIdentity(captured);
+//			pcap_dump((unsigned char *)dumpfile, header, captured);	
+			printf("[%d] Digital: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
 			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				SendDigitalResponseIdentity(captured);
-	//			pcap_dump((unsigned char *)dumpfile, header, captured);	
-				printf("[%d] Digital: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-int m,n=0;
-for(m=0;m<=59;m++)
-{
-n++;
-if(n==17)
-{
-printf("\n");
-n=1;
-}
-printf("%02x ",captured[m]);
-}
-printf("\n");
-				if(times==0)
-				{
-					LastSendResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] Digital: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{
-					SendDigitalResponseMD5(captured);
-	//				pcap_dump((unsigned char *)dumpfile, header, captured);	
-					printf("[%d] Digital: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
-			}
-		precaptured=captured[22];
-		}
-		else
-		{
-			switch ((EAP_Type)captured[22])
-			{
-				case IDENTITY:
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				printf("[%d] Digital: Response Identity.\n", (EAP_ID)captured[19]);
-				break;
-				case MD5:
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-int m,n=0;
-for(m=0;m<=59;m++)
-{
-n++;
-if(n==17)
-{
-printf("\n");
-n=1;
-}
-printf("%02x ",captured[m]);
-}
-printf("\n");
-				if(times==0)
-				{
-					printf("[%d] Digital: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				else
-				{	
-					printf("[%d] Digital: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
-				}
-				break;
-				default:
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
-				printf("Error! Unexpected request type\n");
-				exit(-1);
-				break;
-			}
-		}
-	}
-	else if ((EAP_Code)captured[18] == FAILURE)
-		{	// 处理认证失败信息
-			savedump=1;
-			uint8_t errtype = captured[22];
-			uint8_t msgsize = captured[23];
-			uint8_t infocode[2] = {captured[28],captured[29]};
-			const char *msg = (const char*) &captured[24];
-			printf("[%d] Server: Failure.\n", (EAP_ID)captured[19]);
-			printf("%s\n", msg);
-			if (times>1)
-			{
-				times--;
-				sleep(1);
-				/* 主动发起认证会话 */
-				SendDigitalStartPkt();
-	//			pcap_dump((unsigned char *)dumpfile, header, captured);
-				printf("Digital: Restart.\n");
-				return ;
+				LastSendResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] Digital: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
 			else
 			{
-				if(times==0)
-				{
-					printf("Reconnection failed.\n");
-					exit(-1);
-				}
-				times--;
-				sleep(3);
-				/* 主动发起认证会话 */
-				SendDigitalStartPkt();
-	//			pcap_dump((unsigned char *)dumpfile, header, captured);
-				printf("Digital: The Last Attempt of Restart.\n");
-				return ;
+				SendDigitalResponseMD5(captured);
+//				pcap_dump((unsigned char *)dumpfile, header, captured);	
+				printf("[%d] Digital: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
 			}
-			printf("errtype=0x%02x\n", errtype);
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
 			exit(-1);
+			break;
 		}
+	precaptured=captured[22];
+	}
+	else
+	{
+		switch ((EAP_Type)captured[22])
+		{
+			case IDENTITY:
+			printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
+			printf("[%d] Digital: Response Identity.\n", (EAP_ID)captured[19]);
+			break;
+			case MD5:
+			printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
+			if(times==0)
+			{
+				printf("[%d] Digital: The Last Attempt of MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			else
+			{	
+				printf("[%d] Digital: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
+			}
+			break;
+			default:
+			printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)captured[19], (EAP_Type)captured[22]);
+			printf("Error! Unexpected request type\n");
+			exit(-1);
+			break;
+		}
+	}
+	}
+	else if ((EAP_Code)captured[18] == FAILURE)
+	{	// 处理认证失败信息
+		savedump=1;
+		uint8_t errtype = captured[22];
+		uint8_t msgsize = captured[23];
+
+		uint8_t infocode[2] = {captured[28],captured[29]};
+		const char *msg = (const char*) &captured[24];
+		printf("[%d] Server: Failure.\n", (EAP_ID)captured[19]);
+		printf("%s\n", msg);
+		savedump=1;
+		if (times>1)
+		{
+			times--;
+			sleep(1);
+			/* 主动发起认证会话 */
+			SendDigitalStartPkt();
+//			pcap_dump((unsigned char *)dumpfile, header, captured);
+			printf("Digital: Restart.\n");
+			return ;
+		}
+		else
+		{
+			if(times==0)
+			{
+				printf("Reconnection failed.\n");
+				exit(-1);
+			}
+			times--;
+			sleep(3);
+			/* 主动发起认证会话 */
+			SendDigitalStartPkt();
+//			pcap_dump((unsigned char *)dumpfile, header, captured);
+			printf("Digital: The Last Attempt of Restart.\n");
+			return ;
+		}
+		printf("errtype=0x%02x\n", errtype);
+		exit(-1);
+	}
 	else if ((EAP_Code)captured[18] == SUCCESS)
 	{
 		printf("[%d] Server: Success.\n", captured[19]);
@@ -576,12 +554,11 @@ printf("\n");
 		pcap_dump(param, header, captured);
 		pcap_dump_flush(dumpfile);
 		savedump=0;
-		return ;
 	}
 
 	// 发送
 	pcap_sendpacket(adhandle, Packet, packetlen);
-	printf("Send.(Beta)\n");
+
 	if(savedump)
 	{
 		pcap_dump(param, header, captured);

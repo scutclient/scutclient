@@ -2,15 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
-
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 extern uint8_t BroadcastAddr[6]; // 广播MAC地址
 extern uint8_t MultcastAddr[6]; // 多播MAC地址
 char ipaddrinfo[16]={0};
@@ -32,7 +23,8 @@ void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[], const uint8_
 uint8_t	EthHeader[14]={0}; // ethernet header
 const char H3C_VERSION[]="EN V2.40-0335"; // 华为客户端版本号
 const char H3C_KEY[]      ="HuaWei3COM1X";  // H3C的固定密钥
-void GetIpInfoFromDevice();
+
+
 
 
 
@@ -48,7 +40,127 @@ extern char *UserName;
 extern char *Password;
 extern char *DeviceName;
 
+void GetInfoFromDevice()
+{
+	FILE   *stream;
+	char    buf[100]={0}; 
+	int	count = 0;
+	char ipaddr[16]={0};
+	char maskaddr[16]={0};
+	char gatewayaddr[16]={0};
+	char dnsaddr[16]={0};
+	userlen=strlen(UserName);
+	stream = popen( "uci get network.wan.ipaddr", "r" );
+//stream = popen( "echo 192.168.1.100", "r" );
+	if(stream == NULL)
+		printf("Command error : uci get network.wan.ipaddr not found , this command is used on OpenWRT");
+	else
+	{
+		count = fread( buf, sizeof(char), sizeof(buf), stream); 
+		memcpy(ipaddr, buf , count-1);
+		memcpy(ipaddrinfo, buf , count-1);
+		iplen=strlen(ipaddr);
+		printf("Your ip : %s \n",ipaddr);
+	}
+	pclose( stream ); 
 
+	stream = popen( "uci get network.wan.netmask", "r" );
+//stream = popen( "echo 255.255.255.0", "r" );
+	if(stream == NULL)
+	printf("Command error : uci get network.wan.netmask not found , this command is used on OpenWRT");
+	else
+	{
+		count = fread( buf, sizeof(char), sizeof(buf), stream); 
+		memcpy(maskaddr, buf , count-1);
+		printf("Your mask : %s \n",maskaddr);
+	}
+		pclose( stream ); 
+
+	stream = popen( "uci get network.wan.gateway", "r" );
+//stream = popen( "echo 192.168.1.1", "r" );
+	if(stream == NULL)
+		printf("Command error : uci get network.wan.gateway not found , this command is used on OpenWRT");
+	else
+	{
+		count = fread( buf, sizeof(char), sizeof(buf), stream); 
+		memcpy(gatewayaddr, buf , count-1);
+		printf("Your gateway : %s \n",gatewayaddr);
+	}
+	pclose( stream ); 
+
+	stream = popen( "uci get network.wan.dns | cut -d ' ' -f 1", "r" );
+//stream = popen( "echo 192.168.1.1", "r" );
+	if(stream == NULL)
+		printf("Command error : uci get network.wan.dns | cut -d ' ' -f 1 not found , this command is used on OpenWRT");
+	else
+	{
+		count = fread( buf, sizeof(char), sizeof(buf), stream);
+		memcpy(dnsaddr, buf , count-1);
+		printf("Your DNS : %s \n",dnsaddr);
+	}
+	pclose( stream ); 
+
+	stream = popen( "uci get network.wan.macaddr", "r" );
+//stream = popen( "echo 00:0c:29:e3:03:03", "r" );
+	if(stream == NULL)
+		printf("Command error : uci get network.wan.macaddr not found , this command is used on OpenWRT");
+	else
+	{
+		count = fread( buf, sizeof(char), sizeof(buf), stream);
+//		sscanf(buf,"%02X:%02X:%02X:%02X:%02:%02X\n",&MAC[0],&MAC[1],&MAC[2],&MAC[3],&MAC[4],&MAC[5]);
+		TransMAC(buf);
+		printf("Comfirmed your MAC : %02X:%02X:%02X:%02X:%02X:%02X \n",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
+	}
+	pclose( stream ); 
+	memcpy(EthHeader+0, MultcastAddr, 6);
+	memcpy(EthHeader+6, MAC, 6);
+	EthHeader[12] = 0x88;
+	EthHeader[13] = 0x8e;
+
+	//Init YoungInfo
+
+
+
+
+	unsigned char  checkinfo[23];
+//	int iphex[4];
+//	sscanf(ipaddr,"%d.%d.%d.%d\0",&iphex[0],&iphex[1],&iphex[2],&iphex[3]);
+	TransIP(ipaddr,ip);
+//	printf("Comfirmed IP : %d.%d.%d.%d \n",iphex[0],iphex[1],iphex[2],iphex[3]);
+	memcpy(checkinfo+5, ip, 4);
+	memcpy(netinfo+1, ip, 4);
+
+//	sscanf(mask,"%d.%d.%d.%d\0",&iphex[0],&iphex[1],&iphex[2],&iphex[3]);
+	TransIP(maskaddr,mask);
+//	printf("Comfirmed mask : %d.%d.%d.%d \n",iphex[0],iphex[1],iphex[2],iphex[3]);
+	memcpy(checkinfo+9, mask, 4);
+	memcpy(netinfo+5, mask, 4);
+
+//	sscanf(gateway,"%d.%d.%d.%d\0",&iphex[0],&iphex[1],&iphex[2],&iphex[3]);
+	TransIP(gatewayaddr,gateway);
+//	printf("Comfirmed gateway : %d.%d.%d.%d \n",iphex[0],iphex[1],iphex[2],iphex[3]);
+	memcpy(checkinfo+13, gateway, 4);
+	memcpy(netinfo+9, gateway, 4);
+
+//	sscanf(dns,"%d.%d.%d.%d\0",&iphex[0],&iphex[1],&iphex[2],&iphex[3]);
+	TransIP(dnsaddr,dns);
+//	printf("Comfirmed DNS : %d.%d.%d.%d \n",iphex[0],iphex[1],iphex[2],iphex[3]);
+	memcpy(checkinfo+17, dns, 4);
+	memset(netinfo+13, 0x00, 4);
+	checkinfo[0]=0x00;
+	checkinfo[1]=0x00;
+	checkinfo[2]=0x13;
+	checkinfo[3]=0x11;
+	checkinfo[4]=0x00;
+	netinfo[0]=0x00;
+
+	check(checkinfo);
+	uint8_t	msgbuf[128];
+	memcpy(msgbuf,UserName,userlen);
+	MD5Calc(msgbuf, userlen, netinfo+17);
+
+	return;
+}
 
 void check(unsigned char *buf)
 {
@@ -595,100 +707,4 @@ void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[], const uint8_
 
 	//(void)MD5(msgbuf, msglen, digest);
 	MD5Calc(msgbuf, msglen, digest);
-}
-
-
-
-void GetIpInfoFromDevice()
-{
-	int fd;
-	struct ifreq ifr;
-
-	fd = socket(AF_INET, SOCK_DGRAM, 0);
-
-	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ);
-	ifr.ifr_addr.sa_family = AF_INET;
-	if (ioctl(fd, SIOCGIFADDR, &ifr) == 0)
-	{
-		memcpy(ip, &(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), 4);
-	}
-	if (ioctl(fd, SIOCGIFNETMASK, &ifr) == 0)
-	{
-		memcpy(mask, &(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), 4);
-	}
-	if (ioctl(fd, SIOCGIFHWADDR, &ifr) == 0)
-	{
-		memcpy(MAC, ifr.ifr_hwaddr.sa_data, 6);
-	}
-
-	close(fd);
-	return;
-}
-
-
-void GetInfoFromDevice()
-{
-	FILE   *stream;
-	char    buf[100]={0}; 
-	int	count = 0;
-	char ipaddr[16]={0};
-	char maskaddr[16]={0};
-	char gatewayaddr[16]={0};
-	char dnsaddr[16]={0};
-	userlen=strlen(UserName);
-	GetIpInfoFromDevice();
-
-	stream = popen( "route -n | grep UG | awk '{print $2}'", "r" );
-	count = fread( buf, sizeof(char), sizeof(buf), stream); 
-	memcpy(gatewayaddr, buf , count-1);
-	pclose( stream ); 
-
-	stream = popen( "cat /etc/resolv.conf | grep nameserver |awk '{print $2}'", "r" );
-	count = fread( buf, sizeof(char), sizeof(buf), stream);
-	memcpy(dnsaddr, buf , count-1);
-	pclose( stream ); 
-
-	printf("Your ip : %d.%d.%d.%d \n",ip[0],ip[1],ip[2],ip[3]);
-	printf("Your mask : %d.%d.%d.%d \n",mask[0],mask[1],mask[2],mask[3]);
-	printf("Your gateway : %s \n",gatewayaddr);
-	printf("Your DNS : %s \n",dnsaddr);
-	printf("Comfirmed your MAC : %02X:%02X:%02X:%02X:%02X:%02X \n",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
-	memcpy(EthHeader+0, MultcastAddr, 6);
-	memcpy(EthHeader+6, MAC, 6);
-	EthHeader[12] = 0x88;
-	EthHeader[13] = 0x8e;
-
-	//Init YoungInfo
-
-
-
-
-	unsigned char  checkinfo[23];
-
-	memcpy(checkinfo+5, ip, 4);
-	memcpy(netinfo+1, ip, 4);
-
-	memcpy(checkinfo+9, mask, 4);
-	memcpy(netinfo+5, mask, 4);
-
-	TransIP(gatewayaddr,gateway);
-	memcpy(checkinfo+13, gateway, 4);
-	memcpy(netinfo+9, gateway, 4);
-
-	TransIP(dnsaddr,dns);
-	memcpy(checkinfo+17, dns, 4);
-	memset(netinfo+13, 0x00, 4);
-	checkinfo[0]=0x00;
-	checkinfo[1]=0x00;
-	checkinfo[2]=0x13;
-	checkinfo[3]=0x11;
-	checkinfo[4]=0x00;
-	netinfo[0]=0x00;
-
-	check(checkinfo);
-	uint8_t	msgbuf[128];
-	memcpy(msgbuf,UserName,userlen);
-	MD5Calc(msgbuf, userlen, netinfo+17);
-
-	return;
 }

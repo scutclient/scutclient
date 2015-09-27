@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h> 
 #include <pcap.h>
-#define PRINTINFO 1 
+//#define PRINTINFO 1
 extern char *UserName;
 extern char *Password;
 extern char ipaddrinfo[16];
