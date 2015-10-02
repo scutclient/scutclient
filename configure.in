@@ -8,12 +8,11 @@ AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CC
-#AC_LBL_LIBPCAP(V_PCAPDEP, V_INCLS)
 #AC_SUBST(V_CCOPT)
 #AC_SUBST(V_DEFS)
 #AC_SUBST(V_GROUP)
 #AC_SUBST(V_INCLS)
-#AC_SUBST(V_PCAPDEP)
+AC_SUBST(V_PCAPDEP)
 # Checks for libraries.
 
 # Checks for header files.
@@ -24,8 +23,8 @@ AC_HEADER_STDBOOL
 AC_TYPE_SIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT8_T
-
+AC_TYPE_UINT32_T
 # Checks for library functions.
 AC_CHECK_FUNCS([memset socket])
-
+AC_CHECK_FUNCS([strtoul])
 AC_OUTPUT(Makefile)

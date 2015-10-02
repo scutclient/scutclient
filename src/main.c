@@ -1,4 +1,4 @@
-﻿/* File: main.c
+/* File: main.c
  * ------------
  * 校园网802.1X客户端命令行
  */
@@ -14,17 +14,25 @@ int Authentication(int client);
 char *UserName;
 char *Password;
 char *DeviceName;
-
-
+int LogWrite(unsigned char loglevel,char *fromat,...);
+typedef enum{
+    NONE=0,
+    INF=1,
+    DEBUG=2,
+    ERROR=4,
+    ALL=255
+}LOGLEVEL;
 int main(int argc, char *argv[])
 {
+	LogWrite(INF,"%s","#Start scutclient#");
 	int client=0;
 	printf("\n***************************************************************\n\n");
 	printf("SCUTclient is based on njit8021xclient which is made by liuqun.\n");
-	printf("Welcome to report bugs at Router of SCUT QQ group 262939451.\n\n");
+	printf("Welcome to join in Router of SCUT QQ group 262939451.\n\n");
 	printf("\n***************************************************************\n");
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
+		LogWrite(ERROR,"%s","Sorry,it is unroot.");
 		printf("Sorry,it is unroot.\n");
 		exit(-1);
 	}
