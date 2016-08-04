@@ -6,9 +6,17 @@ scutclient_SOURCES=\
 		src/auth.c \
 		src/functions.c \
 		src/young.c \
-		src/inode.c \	
-		src/digital.c \
+		src/info.c \	
+		src/drcom.c \
 		src/tracelog.c \
+		src/md5.c \
+		src/md5.h \
+		src/auth.h \
+		src/functions.h \
+		src/young.h \
+		src/info.h \	
+		src/drcom.h \
+		src/tracelog.h \
 		$(NULL)
 scutclient_LDADD=-lpcap
 

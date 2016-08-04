@@ -67,8 +67,8 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_scutclient_OBJECTS = main.$(OBJEXT) auth.$(OBJEXT) \
-	functions.$(OBJEXT) young.$(OBJEXT) inode.$(OBJEXT) \
-	digital.$(OBJEXT) tracelog.$(OBJEXT)
+	functions.$(OBJEXT) young.$(OBJEXT) info.$(OBJEXT) \
+	drcom.$(OBJEXT) tracelog.$(OBJEXT) md5.$(OBJEXT)
 scutclient_OBJECTS = $(am_scutclient_OBJECTS)
 scutclient_DEPENDENCIES =
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -197,9 +197,17 @@ scutclient_SOURCES = \
 		src/auth.c \
 		src/functions.c \
 		src/young.c \
-		src/inode.c \
-		src/digital.c \
+		src/info.c \
+		src/drcom.c \
 		src/tracelog.c \
+		src/md5.c \
+		src/md5.h \
+		src/auth.h \
+		src/functions.h \
+		src/young.h \
+		src/info.h \
+		src/drcom.h \
+		src/tracelog.h \
 		$(NULL)
 
 scutclient_LDADD = -lpcap
@@ -308,10 +316,11 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/digital.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drcom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/functions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inode.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tracelog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/young.Po@am__quote@
 
@@ -385,33 +394,33 @@ young.obj: src/young.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o young.obj `if test -f 'src/young.c'; then $(CYGPATH_W) 'src/young.c'; else $(CYGPATH_W) '$(srcdir)/src/young.c'; fi`
 
-inode.o: src/inode.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT inode.o -MD -MP -MF $(DEPDIR)/inode.Tpo -c -o inode.o `test -f 'src/inode.c' || echo '$(srcdir)/'`src/inode.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/inode.Tpo $(DEPDIR)/inode.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/inode.c' object='inode.o' libtool=no @AMDEPBACKSLASH@
+info.o: src/info.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT info.o -MD -MP -MF $(DEPDIR)/info.Tpo -c -o info.o `test -f 'src/info.c' || echo '$(srcdir)/'`src/info.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/info.Tpo $(DEPDIR)/info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/info.c' object='info.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o inode.o `test -f 'src/inode.c' || echo '$(srcdir)/'`src/inode.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o info.o `test -f 'src/info.c' || echo '$(srcdir)/'`src/info.c
 
-inode.obj: src/inode.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT inode.obj -MD -MP -MF $(DEPDIR)/inode.Tpo -c -o inode.obj `if test -f 'src/inode.c'; then $(CYGPATH_W) 'src/inode.c'; else $(CYGPATH_W) '$(srcdir)/src/inode.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/inode.Tpo $(DEPDIR)/inode.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/inode.c' object='inode.obj' libtool=no @AMDEPBACKSLASH@
+info.obj: src/info.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT info.obj -MD -MP -MF $(DEPDIR)/info.Tpo -c -o info.obj `if test -f 'src/info.c'; then $(CYGPATH_W) 'src/info.c'; else $(CYGPATH_W) '$(srcdir)/src/info.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/info.Tpo $(DEPDIR)/info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/info.c' object='info.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o inode.obj `if test -f 'src/inode.c'; then $(CYGPATH_W) 'src/inode.c'; else $(CYGPATH_W) '$(srcdir)/src/inode.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o info.obj `if test -f 'src/info.c'; then $(CYGPATH_W) 'src/info.c'; else $(CYGPATH_W) '$(srcdir)/src/info.c'; fi`
 
-digital.o: src/digital.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT digital.o -MD -MP -MF $(DEPDIR)/digital.Tpo -c -o digital.o `test -f 'src/digital.c' || echo '$(srcdir)/'`src/digital.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/digital.Tpo $(DEPDIR)/digital.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/digital.c' object='digital.o' libtool=no @AMDEPBACKSLASH@
+drcom.o: src/drcom.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT drcom.o -MD -MP -MF $(DEPDIR)/drcom.Tpo -c -o drcom.o `test -f 'src/drcom.c' || echo '$(srcdir)/'`src/drcom.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/drcom.Tpo $(DEPDIR)/drcom.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/drcom.c' object='drcom.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o digital.o `test -f 'src/digital.c' || echo '$(srcdir)/'`src/digital.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o drcom.o `test -f 'src/drcom.c' || echo '$(srcdir)/'`src/drcom.c
 
-digital.obj: src/digital.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT digital.obj -MD -MP -MF $(DEPDIR)/digital.Tpo -c -o digital.obj `if test -f 'src/digital.c'; then $(CYGPATH_W) 'src/digital.c'; else $(CYGPATH_W) '$(srcdir)/src/digital.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/digital.Tpo $(DEPDIR)/digital.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/digital.c' object='digital.obj' libtool=no @AMDEPBACKSLASH@
+drcom.obj: src/drcom.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT drcom.obj -MD -MP -MF $(DEPDIR)/drcom.Tpo -c -o drcom.obj `if test -f 'src/drcom.c'; then $(CYGPATH_W) 'src/drcom.c'; else $(CYGPATH_W) '$(srcdir)/src/drcom.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/drcom.Tpo $(DEPDIR)/drcom.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/drcom.c' object='drcom.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o digital.obj `if test -f 'src/digital.c'; then $(CYGPATH_W) 'src/digital.c'; else $(CYGPATH_W) '$(srcdir)/src/digital.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o drcom.obj `if test -f 'src/drcom.c'; then $(CYGPATH_W) 'src/drcom.c'; else $(CYGPATH_W) '$(srcdir)/src/drcom.c'; fi`
 
 tracelog.o: src/tracelog.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT tracelog.o -MD -MP -MF $(DEPDIR)/tracelog.Tpo -c -o tracelog.o `test -f 'src/tracelog.c' || echo '$(srcdir)/'`src/tracelog.c
@@ -426,6 +435,20 @@ tracelog.obj: src/tracelog.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/tracelog.c' object='tracelog.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o tracelog.obj `if test -f 'src/tracelog.c'; then $(CYGPATH_W) 'src/tracelog.c'; else $(CYGPATH_W) '$(srcdir)/src/tracelog.c'; fi`
+
+md5.o: src/md5.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.o -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.o `test -f 'src/md5.c' || echo '$(srcdir)/'`src/md5.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/md5.c' object='md5.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.o `test -f 'src/md5.c' || echo '$(srcdir)/'`src/md5.c
+
+md5.obj: src/md5.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT md5.obj -MD -MP -MF $(DEPDIR)/md5.Tpo -c -o md5.obj `if test -f 'src/md5.c'; then $(CYGPATH_W) 'src/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/md5.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/md5.Tpo $(DEPDIR)/md5.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/md5.c' object='md5.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o md5.obj `if test -f 'src/md5.c'; then $(CYGPATH_W) 'src/md5.c'; else $(CYGPATH_W) '$(srcdir)/src/md5.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
