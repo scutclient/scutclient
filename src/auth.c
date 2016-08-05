@@ -24,6 +24,8 @@ static uint8_t MultcastHeader[14] = {0};
 static uint8_t UnicastHeader[14] = {0};
 static size_t packetlen = 0;
 static int clientHandler = 0;
+static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
+static time_t WaitRecvTime = 0;  // UDP报文等待时间
 /* 静态变量*/
 
 /* 静态常量*/
@@ -33,6 +35,8 @@ const static uint8_t UnicastAddr[6] = {0x01,0xd0,0xf8,0x00,0x00,0x03}; // 单播
 const static int LOGOFF = 0; // 下线标志位
 const static int YOUNG_CLIENT = 1; // 翼起来客户端标志位
 const static int DRCOM_CLIENT = 2; // Drcom客户端标志位
+const static int DRCOM_UDP_HEARTBEAT_DELAY = 600; // Drcom客户端心跳延时秒数，默认600秒
+const static int DRCOM_UDP_RECV_DELAY = 2; // Drcom客户端收UDP报文延时秒数，默认2秒
 /* 静态常量*/
  
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
@@ -351,7 +355,8 @@ int Authentication(int client)
 			{
 				pcap_8021x_Handler((unsigned char *)dumpfile,header,captured);
 			}
-			if(success_8021x)
+			// 如果8021x协议认证成功并且心跳时间间隔大于设定值
+			if(success_8021x && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
 			{
 				if(tryUdpRecvTimes > 5)
 				{
@@ -361,11 +366,18 @@ int Authentication(int client)
 				if(tryUdpRecvTimes == 0)
 				{
 					Drcom_UDP_Sender(sock, serv_addr, send_data, send_data_len);
+					// 发送后记下基线时间，开始记时
+					WaitRecvTime = time(NULL);
 				}
-				//等1秒再收
-				sleep(1);
+				// 尝试收报文
 				success_udp_recv = Drcom_UDP_Receiver(sock, recv_data, recv_data_len);
-				tryUdpRecvTimes++;
+				// 当前时间减去基线时间大于设定值的时候再自加
+				if(time(NULL) - WaitRecvTime > DRCOM_UDP_RECV_DELAY)
+				{
+					// 记下基线时间，重新记时
+					WaitRecvTime = time(NULL);
+					tryUdpRecvTimes++;
+				}
 				if(success_udp_recv)
 				{
 					send_data_len = Drcom_UDP_Handler(send_data, recv_data);
@@ -441,7 +453,8 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
 						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
 					break;
-					case MISC_2800_04_TYPE:
+					case MISC_2800_04_TYPE: // 收到这个代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
+						BaseHeartbeatTime = time(NULL);
 						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
 						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
 						printf("[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
