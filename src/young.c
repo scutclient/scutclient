@@ -7,7 +7,7 @@ static uint8_t	checksum[23] = {0};
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
 
-size_t SendYoungStartPkt( uint8_t EthHeader[], uint8_t *Packet )
+size_t AppendYoungStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 {
 	size_t packetlen = 0;
 	uint8_t checksuminfo[131]=
@@ -38,7 +38,7 @@ size_t SendYoungStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 	return packetlen;
 }
 
-size_t SendYoungResponseIdentity(const uint8_t request[],uint8_t EthHeader[], unsigned char ipaddrinfo[], unsigned char *UserName, uint8_t *Packet)
+size_t AppendYoungResponseIdentity(const uint8_t request[],uint8_t EthHeader[], unsigned char ipaddrinfo[], unsigned char *UserName, uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -105,7 +105,7 @@ size_t SendYoungResponseIdentity(const uint8_t request[],uint8_t EthHeader[], un
 	return packetlen;
 }
 
-size_t SendYoungResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char ipaddrinfo[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet)
+size_t AppendYoungResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char ipaddrinfo[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -186,7 +186,7 @@ size_t SendYoungResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigne
 	return packetlen;
 }
 
-size_t SendYoungLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
+size_t AppendYoungLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	uint8_t checksuminfo[131]=

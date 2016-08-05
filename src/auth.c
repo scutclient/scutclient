@@ -10,7 +10,7 @@
 static uint8_t precaptured=0xff;
 static uint8_t Packet[255]={0xff};
 static int resev=0;
-static int times=5;
+static int times=10;
 static int savedump=1;
 static int success_8021x=0;
 static int success_udp_recv=0;
@@ -21,6 +21,7 @@ static int MISC_TYPE_4=0;
 static uint8_t EthHeader[14] = {0};
 static uint8_t BroadcastHeader[14] = {0};
 static uint8_t MultcastHeader[14] = {0};
+static uint8_t UnicastHeader[14] = {0};
 static size_t packetlen = 0;
 static int clientHandler = 0;
 /* 静态变量*/
@@ -28,6 +29,7 @@ static int clientHandler = 0;
 /* 静态常量*/
 const static uint8_t BroadcastAddr[6] = {0xff,0xff,0xff,0xff,0xff,0xff}; // 广播MAC地址
 const static uint8_t MultcastAddr[6]  = {0x01,0x80,0xc2,0x00,0x00,0x03}; // 多播MAC地址
+const static uint8_t UnicastAddr[6] = {0x01,0xd0,0xf8,0x00,0x00,0x03}; // 单播MAC地址
 const static int LOGOFF = 0; // 下线标志位
 const static int YOUNG_CLIENT = 1; // 翼起来客户端标志位
 const static int DRCOM_CLIENT = 2; // Drcom客户端标志位
@@ -40,9 +42,9 @@ pcap_t *adhandle; // adapter handle
 pcap_dumper_t *dumpfile; //dumpfile
 // 子函数声明
 void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,const uint8_t *capture);
-void appendStartPkt();
-void appendResponseIdentity(const uint8_t request[]);
-void appendResponseMD5(const uint8_t request[]);
+size_t appendStartPkt();
+size_t appendResponseIdentity(const uint8_t request[]);
+size_t appendResponseMD5(const uint8_t request[]);
 void appendLogoffPkt();
 
 /**
@@ -52,19 +54,19 @@ void appendLogoffPkt();
  * 该函数将不断循环，应答802.1X认证会话，直到遇到错误后才退出
  */
 
-void appendStartPkt()
+size_t appendStartPkt()
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
-		SendYoungStartPkt( EthHeader, Packet );
+		return AppendYoungStartPkt( EthHeader, Packet );
 	 }
 	 else if (clientHandler == DRCOM_CLIENT)
 	 {
-		SendDrcomStartPkt( EthHeader, Packet );
+		return AppendDrcomStartPkt( EthHeader, Packet );
 	 }
 }
 
-void appendResponseIdentity(const uint8_t request[])
+size_t appendResponseIdentity(const uint8_t request[])
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
@@ -72,17 +74,17 @@ void appendResponseIdentity(const uint8_t request[])
 		GetWanIpAddressFromDevice(ipaddress);
 		unsigned char username[32] = {0};
 		GetUserName(username);
-		SendYoungResponseIdentity(request, EthHeader, ipaddress, username, Packet);
+		return AppendYoungResponseIdentity(request, EthHeader, ipaddress, username, Packet);
 	 }
 	 else if (clientHandler == DRCOM_CLIENT)
 	 {
 		unsigned char username[32] = {0};
 		GetUserName(username);
-		SendDrcomResponseIdentity(request, EthHeader, username, Packet);
+		return AppendDrcomResponseIdentity(request, EthHeader, username, Packet);
 	 }
 }
 
-void appendResponseMD5(const uint8_t request[])
+size_t appendResponseMD5(const uint8_t request[])
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
@@ -92,7 +94,7 @@ void appendResponseMD5(const uint8_t request[])
 		GetUserName(username);
 		unsigned char password[32] = {0};
 		GetPassword(password);
-		SendYoungResponseMD5(request, EthHeader, ipaddress, username, password, Packet);
+		return AppendYoungResponseMD5(request, EthHeader, ipaddress, username, password, Packet);
 	 }
 	 else if (clientHandler == DRCOM_CLIENT)
 	 {
@@ -100,7 +102,7 @@ void appendResponseMD5(const uint8_t request[])
 		GetUserName(username);
 		unsigned char password[32] = {0};
 		GetPassword(password);
-		SendDrcomResponseMD5(request, EthHeader, username, password, Packet);
+		return AppendDrcomResponseMD5(request, EthHeader, username, password, Packet);
 	 }
 }
 
@@ -109,20 +111,20 @@ void sendLogoffPkt()
 	// 连发三次，确保已经下线
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
-		packetlen = SendYoungLogoffPkt(EthHeader, Packet);
+		packetlen = AppendYoungLogoffPkt(EthHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
-		packetlen = SendYoungLogoffPkt(MultcastHeader, Packet);
+		packetlen = AppendYoungLogoffPkt(MultcastHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
-		packetlen = SendYoungLogoffPkt(BroadcastHeader, Packet);
+		packetlen = AppendYoungLogoffPkt(BroadcastHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
 	 }
 	 else if (clientHandler == DRCOM_CLIENT)
 	 {
-		packetlen = SendDrcomLogoffPkt(EthHeader, Packet);
+		packetlen = AppendDrcomLogoffPkt(EthHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
-		packetlen = SendDrcomLogoffPkt(MultcastHeader, Packet);
+		packetlen = AppendDrcomLogoffPkt(MultcastHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
-		packetlen = SendDrcomLogoffPkt(BroadcastHeader, Packet);
+		packetlen = AppendDrcomLogoffPkt(BroadcastHeader, Packet);
 		pcap_sendpacket(adhandle, Packet, packetlen);
 	 }
 }
@@ -180,10 +182,51 @@ void *InitHeader(uint8_t Header[],const uint8_t ServerMAC[])
 	Header[13] = 0x8e;
 }
 
-int initAuthenticationInfo()
+void initAuthenticationInfo()
 {
 	InitHeader(MultcastHeader, MultcastAddr);
 	InitHeader(BroadcastHeader, BroadcastAddr);
+	InitHeader(UnicastHeader, UnicastAddr);
+}
+
+void loginToGetServerMAC(struct pcap_pkthdr *header, const uint8_t	*captured)
+{
+	while(resev ==0)
+	{
+		if(Packet[0] == 0xff)
+		{
+			packetlen = appendStartPkt(MultcastHeader,Packet);
+			pcap_sendpacket(adhandle, Packet, packetlen);
+			LogWrite(INF,"%s","Client: MultcastHeader Start.");
+			printf("Client: MultcastHeader Start.\n");
+		}
+		else
+		{
+			packetlen = appendStartPkt(BroadcastHeader,Packet);
+			pcap_sendpacket(adhandle, Packet, packetlen);
+			LogWrite(INF,"%s","Client: BroadcastHeader Start.");
+			printf("Client: BroadcastHeader Start.\n");
+		}
+		sleep(1);
+		if(times == 0)
+		{
+			printf("Error! No Response\n");
+			LogWrite(ERROR,"%s", "Error! No Response\n");
+			// 确保下线
+			sendLogoffPkt();
+			exit(-1);
+		}
+		times--;
+		if(pcap_next_ex(adhandle,&header,&captured))
+		{
+			//已经收到了
+			resev = 1;
+			times = 5;
+			// 初始化服务器MAC地址
+			InitHeader(EthHeader, captured+6);
+			pcap_8021x_Handler((unsigned char *)dumpfile,header,captured);
+		}
+	}
 }
 
 int Authentication(int client)
@@ -244,42 +287,8 @@ int Authentication(int client)
 		printf("SCUTclient Mode.\n");
 		InitCheckSumForYoung();
 		
-		while(resev ==0)
-		{
-			if(Packet[0] == 0xff)
-			{
-				packetlen = SendYoungStartPkt(MultcastHeader,Packet);
-				pcap_sendpacket(adhandle, Packet, packetlen);
-				LogWrite(INF,"%s","SCUTclient: MultcastHeader Start.");
-				printf("SCUTclient: MultcastHeader Start.\n");
-			}
-			else
-			{
-				packetlen = SendYoungStartPkt(BroadcastHeader,Packet);
-				pcap_sendpacket(adhandle, Packet, packetlen);
-				LogWrite(INF,"%s","SCUTclient: BroadcastHeader Start.");
-				printf("SCUTclient: BroadcastHeader Start.\n");
-			}
-			sleep(1);
-			if(times == 0)
-			{
-				printf("Error! No Response\n");
-				LogWrite(ERROR,"%s", "Error! No Response\n");
-				// 确保下线
-				sendLogoffPkt();
-				exit(-1);
-			}
-			times--;
-			if(pcap_next_ex(adhandle,&header,&captured))
-			{
-				//已经收到了
-				resev = 1;
-				times = 5;
-				// 初始化服务器MAC地址
-				InitHeader(EthHeader, captured+6);
-				pcap_8021x_Handler((unsigned char *)dumpfile,header,captured);
-			}
-		}
+		loginToGetServerMAC(header,captured);
+		
 		while(resev)
 		{
 			if(pcap_next_ex(adhandle,&header,&captured))
@@ -293,11 +302,7 @@ int Authentication(int client)
 	{
 		LogWrite(INF,"%s","Drcom Mode.");
 		printf("Drcom Mode.\n");
-		SendDrcomStartPkt(MultcastHeader,Packet);
-		pcap_sendpacket(adhandle, Packet, packetlen);
-		LogWrite(INF,"%s","Drcom: Start.");
-		printf("Drcom: Start.\n");
-		
+		LogWrite(INF,"%s","DR.COM INIT SOCKET\n");
 		printf("DR.COM INIT SOCKET\n");
         int sock=0;//定义整形变量sock
         unsigned char send_data[SEND_DATA_SIZE];                   //定义无符号字符串send_data[1000]  长度为1000
@@ -307,8 +312,10 @@ int Authentication(int client)
         struct sockaddr_in serv_addr,local_addr;                              //定义结构体sockaddr_in        serv_addr
         
         sock = socket(AF_INET, SOCK_DGRAM, 0);                     //AF_INET决定了要用ipv4地址（32位的）与端口号（16位的）的组合，。数据报式Socket（SOCK_DGRAM）是一种无连接的Socket，对应于无连接的UDP服务应用
-        if (sock < 0) {                                            //sock<0即错误
-            fprintf(stderr, "[drcom]: create sock failed.\n");
+        if (sock < 0) 
+		{                                            //sock<0即错误
+			LogWrite(ERROR,"%s","[drcom]: create sock failed.\n");
+			printf("[drcom]: create sock failed.\n");
             exit(EXIT_FAILURE);
         }
 		// 非阻塞
@@ -324,42 +331,8 @@ int Authentication(int client)
 		
         bind(sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
 		
-		while(resev ==0)
-		{
-			if(Packet[0] == 0xff)
-			{
-				packetlen = SendDrcomStartPkt(MultcastHeader,Packet);
-				pcap_sendpacket(adhandle, Packet, packetlen);
-				LogWrite(INF,"%s","DrcomClient: MultcastHeader Start.");
-				printf("DrcomClient: MultcastHeader Start.\n");
-			}
-			else
-			{
-				packetlen = SendDrcomStartPkt(BroadcastHeader,Packet);
-				pcap_sendpacket(adhandle, Packet, packetlen);
-				LogWrite(INF,"%s","DrcomClient: BroadcastHeader Start.");
-				printf("DrcomClient: BroadcastHeader Start.\n");
-			}
-			sleep(1);
-			if(times == 0)
-			{
-				printf("Error! No 8021x Response\n");
-				LogWrite(ERROR,"%s", "Error! No 8021x Response\n");
-				// 确保下线
-				sendLogoffPkt();
-				exit(-1);
-			}
-			times--;
-			if(pcap_next_ex(adhandle,&header,&captured))
-			{
-				//已经收到了
-				resev = 1;
-				times = 5;
-				// 初始化服务器MAC地址
-				InitHeader(EthHeader, captured+6);
-				pcap_8021x_Handler((unsigned char *)dumpfile,header,captured);
-			}
-		}
+		loginToGetServerMAC(header,captured);
+		
 		int tryUdpRecvTimes = 0;
 		send_data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 		while(resev)
@@ -416,13 +389,13 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						{
 							case ALIVE_LOGIN_TYPE:
 								data_len = Drcom_ALIVE_LOGIN_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
-								printf("[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
+								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d\n", recv_data[4],data_len);
+								printf("[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d\n", recv_data[4],data_len);
 							break;
 							case ALIVE_HEARTBEAT_TYPE:
-								data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
-								printf("[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
+								data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
+								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[4],data_len);
+								printf("[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[4],data_len);
 							break;
 							default:
 								LogWrite(ERROR,"[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[4]);
@@ -434,8 +407,8 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 					break;
 					case FILE_TYPE:
 						data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[3],data_len);
-						printf("[FILE_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[3],data_len);
+						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[3],data_len);
+						printf("[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[3],data_len);
 					break;
 					default:
 						LogWrite(ERROR,"[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[3]);
@@ -447,21 +420,21 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 			break;
 			case MISC_3000:
 				data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[2],data_len);
-				printf("[MISC_3000] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[2],data_len);
+				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[2],data_len);
+				printf("[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[2],data_len);
 			break;
 			case MISC_2800:
 				switch ((DRCOM_MISC_2800_Type)recv_data[5])
 				{
 					case MISC_2800_02_TYPE:
 						data_len = Drcom_MISC_2800_03_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
-						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
+						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
+						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
 					break;
 					case MISC_2800_04_TYPE:
-						data_len = Drcom_HEARTBEAT_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
-						printf("[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
+						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
+						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
+						printf("[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
 					break;
 					default:
 						LogWrite(ERROR,"[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[5]);
@@ -492,7 +465,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			case IDENTITY:
 				LogWrite(INF,"[%d] Server: Request Identity!", (EAP_ID)captured[19]);
 				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				appendResponseIdentity(captured);
+				packetlen = appendResponseIdentity(captured);
 				pcap_dump((unsigned char *)dumpfile, header, captured);	
 				LogWrite(INF,"[%d] Client: Response Identity.", (EAP_ID)captured[19]);
 				printf("[%d] Client: Response Identity.\n", (EAP_ID)captured[19]);
@@ -500,7 +473,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			case MD5:
 				LogWrite(INF,"[%d] Server: Request MD5-Challenge!", (EAP_ID)captured[19]);
 				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				appendResponseMD5(captured);
+				packetlen = appendResponseMD5(captured);
 				pcap_dump((unsigned char *)dumpfile, header, captured);	
 				LogWrite(INF,"[%d] Client: Response MD5-Challenge.", (EAP_ID)captured[19]);
 				printf("[%d] Client: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
@@ -531,7 +504,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			times--;
 			sleep(1);
 			/* 主动发起认证会话 */
-			appendStartPkt();
+			packetlen = appendStartPkt();
 			pcap_dump((unsigned char *)dumpfile, header, captured);
 			LogWrite(INF,"%s","Client: Restart.");
 			printf("Client: Restart.\n");

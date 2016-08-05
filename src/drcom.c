@@ -35,7 +35,7 @@ void encrypt(unsigned char *info)
 	free(chartmp);
 }
 
-size_t SendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
+size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 {
 	size_t packetlen = 0;
 	memset(Packet, 0x00,97);//fill 0x00
@@ -53,7 +53,7 @@ size_t SendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 	return packetlen;
 }
 
-size_t SendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[], unsigned char *UserName, uint8_t *Packet )
+size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[], unsigned char *UserName, uint8_t *Packet )
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -98,7 +98,7 @@ size_t SendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[], u
 	return packetlen;
 }
 
-size_t SendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet)
+size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -150,7 +150,7 @@ size_t SendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigne
 	return packetlen;
 }
 
-size_t SendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
+size_t AppendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	memset(Packet, 0xa5,97);//fill 0xa5
