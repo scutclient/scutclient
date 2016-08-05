@@ -193,19 +193,29 @@ void loginToGetServerMAC(struct pcap_pkthdr *header, const uint8_t	*captured)
 {
 	while(resev ==0)
 	{
-		if(Packet[0] == 0xff)
+		// 当之前广播的时候，设置为多播
+		if(Packet[1] == 0xff)
 		{
 			packetlen = appendStartPkt(MultcastHeader,Packet);
 			pcap_sendpacket(adhandle, Packet, packetlen);
-			LogWrite(INF,"%s","Client: MultcastHeader Start.");
-			printf("Client: MultcastHeader Start.\n");
+			LogWrite(INF,"%s","Client: Multcast Start.");
+			printf("Client: Multcast Start.\n");
 		}
-		else
+		// 当之前多播的时候，设置为单播
+		if(Packet[1] == 0x80)
+		{
+			packetlen = appendStartPkt(UnicastHeader,Packet);
+			pcap_sendpacket(adhandle, Packet, packetlen);
+			LogWrite(INF,"%s","Client: Unicast Start.");
+			printf("Client: Unicast Start.\n");
+		}
+		// 当之前单播的时候，设置为广播
+		if(Packet[1] == 0xd0)
 		{
 			packetlen = appendStartPkt(BroadcastHeader,Packet);
 			pcap_sendpacket(adhandle, Packet, packetlen);
-			LogWrite(INF,"%s","Client: BroadcastHeader Start.");
-			printf("Client: BroadcastHeader Start.\n");
+			LogWrite(INF,"%s","Client: Broadcast Start.");
+			printf("Client: Broadcast Start.\n");
 		}
 		sleep(1);
 		if(times == 0)
