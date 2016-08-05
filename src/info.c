@@ -23,10 +23,10 @@ const unsigned char GET_WAN_IP[]="uci get network.wan.ipaddr"; // »ñÈ¡wan¿ÚIPµØÖ
 const unsigned char GET_WAN_NETMASK[]="uci get network.wan.netmask"; // »ñÈ¡wan¿Únetmask
 const unsigned char GET_WAN_GATEWAY[]="uci get network.wan.gateway"; // »ñÈ¡wan¿ÚÍø¹ØµØÖ·
 const unsigned char GET_DNS[]="uci get network.wan.dns | cut -d ' ' -f 1"; // »ñÈ¡DNSµØÖ·
-const unsigned char GET_HOST_NAME[]="cat /proc/sys/kernel/hostname"; // »ñÈ¡Ö÷»úÃû×Ö
-const unsigned char GET_UDP_SERVER_IP[]="echo 211.38.210.131"; // »ñÈ¡UDPÈÏÖ¤·şÎñÆ÷µØÖ·
-const unsigned char GET_VERSION[]="echo 4472434f4d00cf072a00332e31332e302d32342d67656e65726963"; // »ñÈ¡°æ±¾ºÅ
-const unsigned char GET_HASH[]="echo 915e3d0281c3a0bdec36d7f9c15e7a16b59c12b8"; // »ñÈ¡HASHÖµ
+const unsigned char GET_HOST_NAME[]="uci get scutclient.@drcom[0].hostname"; // »ñÈ¡Ö÷»úÃû×Ö
+const unsigned char GET_UDP_SERVER_IP[]="uci get scutclient.@drcom[0].server_auth_ip"; // »ñÈ¡UDPÈÏÖ¤·şÎñÆ÷µØÖ·
+const unsigned char GET_VERSION[]="uci get scutclient.@drcom[0].version"; // »ñÈ¡°æ±¾ºÅ
+const unsigned char GET_HASH[]="uci get scutclient.@drcom[0].hash"; // »ñÈ¡HASHÖµ
 /* ¾²Ì¬³£Á¿*/
 
 int checkInitForChar(unsigned char *str )

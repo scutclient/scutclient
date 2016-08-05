@@ -7,6 +7,7 @@ typedef enum {MISC_0800=0x08, ALIVE_FILE=0x10, MISC_3000=0x30, MISC_2800=0x28} D
 
 static uint8_t crc32sum[4] = {0};
 static uint8_t md5info[16] = {0};
+static uint8_t tailinfo[16] = {0};
 static int drcom_package_id = 0;  // 包的id，每次自增1
 
 unsigned int drcom_crc32(char *data, int data_len)
@@ -19,6 +20,19 @@ unsigned int drcom_crc32(char *data, int data_len)
 		ret &= 0xFFFFFFFF;
 	}
 	return ret;
+}
+
+void encrypt(unsigned char *info)
+{
+	int i;
+	unsigned char *chartmp= NULL;
+    chartmp = (unsigned char *)malloc(16);
+  	for(i = 0 ; i < 16 ; i++)
+	{
+		chartmp[i] = (unsigned char)((info[i] << (i & 0x07)) + (info[i] >> (8-(i & 0x07))));
+	}
+	memcpy(info,chartmp,16);
+	free(chartmp);
 }
 
 size_t SendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
@@ -253,33 +267,10 @@ int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x44;
-	send_data[packetlen++] = 0x72;
-	send_data[packetlen++] = 0x63;
-	send_data[packetlen++] = 0x6f;
 	
-	//填充udp认证服务器的ip
-	uint8_t server_ip[4]= {0};
-	GetUdpServerIpFromDevice(server_ip);
-	memcpy(send_data+packetlen,server_ip,4);
-	packetlen += 4;
-	
-	srand((unsigned)time(NULL)); /*随机种子*/
-	// 随机端口
-	uint16_t server_port=rand()%100+18000; /*为18000-18100之间的随机数*/
-	memcpy(send_data+packetlen,&server_port,2);
-	packetlen += 2;
-	
-	//填充本机的ip
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
-	memcpy(send_data+packetlen,ip,4);
-	packetlen += 4;
-	
-	// 随机端口
-	uint16_t port=rand()%10+425; /*为425-435之间的随机数*/
-	memcpy(send_data+packetlen,&port,2);
-	packetlen += 2;
+	//填充MISC_3000包解密得到的tail信息
+	memcpy(send_data+packetlen,tailinfo,16);
+	packetlen += 16;
 	
 	//时间信息
 	uint16_t timeinfo = time(NULL);
@@ -290,6 +281,10 @@ int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
 
 int Drcom_MISC_2800_01_TYPE_Setter(unsigned char *send_data, char *recv_data)
 {
+	// 存好tail信息，并顺便解密，以备后面udp报文使用
+	memcpy(tailinfo,recv_data+16,16);
+	encrypt(tailinfo);
+	
 	int packetlen = 0;
 	send_data[packetlen++] = 0x07;
 	send_data[packetlen++] = drcom_package_id++;
@@ -343,9 +338,4 @@ int Drcom_MISC_2800_03_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	memcpy(send_data+packetlen,&crc,4);
 	packetlen+=16;
 	return packetlen;
-}
-
-int Drcom_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
-{
-	return Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data, recv_data);
 }

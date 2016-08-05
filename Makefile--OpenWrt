@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=scutclient
-PKG_RELEASE:=1
+PKG_RELEASE:=0
 PKG_VERSION:=1.6
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
@@ -19,7 +19,7 @@ define Package/scutclient
   SECTION:=net
   CATEGORY:=Network
   TITLE:=SCUT 802.1X client by Forward
- DEPENDS:=+libpcap 
+  DEPENDS:=+libpcap 
 endef
 
 define Package/scutclient/description
@@ -27,8 +27,27 @@ define Package/scutclient/description
  Thanks to njit8021xclient make by liuqun.
 endef
 
+TARGET_CFLAGS += \
+	-ffunction-sections \
+	-fdata-sections
+
+CONFIGURE_VARS += \
+	ac_cv_linux_vers=$(LINUX_VERSION) \
+	ac_cv_header_libusb_1_0_libusb_h=no \
+	ac_cv_netfilter_can_compile=no
+
+
 CONFIGURE_ARGS += \
-		$(NULL)
+	--enable-shared \
+	--enable-static \
+	--disable-yydebug \
+	--enable-ipv6 \
+	--with-build-cc="$(HOSTCC)" \
+	--with-pcap=linux \
+	--without-septel \
+	--without-dag \
+	--without-libnl \
+	--disable-can
 
 define Build/Prepare
 $(call Build/Prepare/Default)
@@ -39,7 +58,9 @@ $(call Build/Configure/Default)
 endef
 
 define Package/scutclient/install
-	$(MAKE) -C $(PKG_BUILD_DIR) install-exec DESTDIR=$(1) libpcap.a
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/config/scutclient $(1)/etc/config/scutclient
+	$(MAKE) -C $(PKG_BUILD_DIR) install-exec DESTDIR=$(1) 
 endef
 
 $(eval $(call BuildPackage,scutclient))

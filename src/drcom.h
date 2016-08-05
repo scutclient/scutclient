@@ -13,4 +13,3 @@ int Drcom_ALIVE_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data);
 int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data);
 int Drcom_MISC_2800_01_TYPE_Setter(unsigned char *send_data, char *recv_data);
 int Drcom_MISC_2800_03_TYPE_Setter(unsigned char *send_data, char *recv_data);
-int Drcom_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data);

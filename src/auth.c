@@ -40,10 +40,10 @@ pcap_t *adhandle; // adapter handle
 pcap_dumper_t *dumpfile; //dumpfile
 // 子函数声明
 void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,const uint8_t *capture);
-void pickupStartPkt();
-void pickupResponseIdentity(const uint8_t request[]);
-void pickupResponseMD5(const uint8_t request[]);
-void pickupLogoffPkt();
+void appendStartPkt();
+void appendResponseIdentity(const uint8_t request[]);
+void appendResponseMD5(const uint8_t request[]);
+void appendLogoffPkt();
 
 /**
  * 函数：Authentication()
@@ -52,7 +52,7 @@ void pickupLogoffPkt();
  * 该函数将不断循环，应答802.1X认证会话，直到遇到错误后才退出
  */
 
-void pickupStartPkt()
+void appendStartPkt()
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
@@ -64,7 +64,7 @@ void pickupStartPkt()
 	 }
 }
 
-void pickupResponseIdentity(const uint8_t request[])
+void appendResponseIdentity(const uint8_t request[])
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
@@ -82,7 +82,7 @@ void pickupResponseIdentity(const uint8_t request[])
 	 }
 }
 
-void pickupResponseMD5(const uint8_t request[])
+void appendResponseMD5(const uint8_t request[])
 {
 	 if(clientHandler == YOUNG_CLIENT)
 	 {
@@ -416,53 +416,65 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						{
 							case ALIVE_LOGIN_TYPE:
 								data_len = Drcom_ALIVE_LOGIN_TYPE_Setter(send_data,recv_data);
+								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
+								printf("[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
 							break;
 							case ALIVE_HEARTBEAT_TYPE:
 								data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
+								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
+								printf("[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[4],data_len);
 							break;
 							default:
-								LogWrite(ERROR,"[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!", recv_data[4]);
+								LogWrite(ERROR,"[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[4]);
 								printf("[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!\n", recv_data[4]);
-								printf("Error! Unexpected request type\n");
+								printf("Error! Unexpected request type!Restart Login...\n");
 								data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 							break;
 						}
 					break;
 					case FILE_TYPE:
 						data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
+						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[3],data_len);
+						printf("[FILE_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[3],data_len);
 					break;
 					default:
-						LogWrite(ERROR,"[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!", recv_data[3]);
+						LogWrite(ERROR,"[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[3]);
 						printf("[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!\n", recv_data[3]);
-						printf("Error! Unexpected request type\n");
+						printf("Error! Unexpected request type!Restart Login...\n");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
-				break;
+			break;
 			case MISC_3000:
 				data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-				break;
+				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[2],data_len);
+				printf("[MISC_3000] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[2],data_len);
+			break;
 			case MISC_2800:
 				switch ((DRCOM_MISC_2800_Type)recv_data[5])
 				{
 					case MISC_2800_02_TYPE:
 						data_len = Drcom_MISC_2800_03_TYPE_Setter(send_data,recv_data);
+						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
+						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
 					break;
 					case MISC_2800_04_TYPE:
 						data_len = Drcom_HEARTBEAT_TYPE_Setter(send_data,recv_data);
+						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
+						printf("[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response data len=%d\n", recv_data[5],data_len);
 					break;
 					default:
-						LogWrite(ERROR,"[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!", recv_data[5]);
+						LogWrite(ERROR,"[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[5]);
 						printf("[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!\n", recv_data[5]);
-						printf("Error! Unexpected request type\n");
+						printf("Error! Unexpected request type!Restart Login...\n");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
 			break;
 			default:
-				LogWrite(ERROR,"[DRCOM_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!", recv_data[2]);
+				LogWrite(ERROR,"[DRCOM_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[2]);
 				printf("[DRCOM_Type] UDP_Server: Request (type:%d)!\n", recv_data[2]);
-				printf("Error! Unexpected request type\n");
+				printf("Error! Unexpected request type!Restart Login...\n");
 				data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 			break;
 		}
@@ -480,7 +492,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			case IDENTITY:
 				LogWrite(INF,"[%d] Server: Request Identity!", (EAP_ID)captured[19]);
 				printf("[%d] Server: Request Identity!\n", (EAP_ID)captured[19]);
-				pickupResponseIdentity(captured);
+				appendResponseIdentity(captured);
 				pcap_dump((unsigned char *)dumpfile, header, captured);	
 				LogWrite(INF,"[%d] Client: Response Identity.", (EAP_ID)captured[19]);
 				printf("[%d] Client: Response Identity.\n", (EAP_ID)captured[19]);
@@ -488,7 +500,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			case MD5:
 				LogWrite(INF,"[%d] Server: Request MD5-Challenge!", (EAP_ID)captured[19]);
 				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)captured[19]);
-				pickupResponseMD5(captured);
+				appendResponseMD5(captured);
 				pcap_dump((unsigned char *)dumpfile, header, captured);	
 				LogWrite(INF,"[%d] Client: Response MD5-Challenge.", (EAP_ID)captured[19]);
 				printf("[%d] Client: Response MD5-Challenge.\n", (EAP_ID)captured[19]);
@@ -519,7 +531,7 @@ void pcap_8021x_Handler(unsigned char *param, const struct pcap_pkthdr *header,c
 			times--;
 			sleep(1);
 			/* 主动发起认证会话 */
-			pickupStartPkt();
+			appendStartPkt();
 			pcap_dump((unsigned char *)dumpfile, header, captured);
 			LogWrite(INF,"%s","Client: Restart.");
 			printf("Client: Restart.\n");
