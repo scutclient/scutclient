@@ -14,7 +14,7 @@ void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
 	printf("\n");
 	n=1;
 	}
-	printf("%02x ",Packet[m]);
+	printf("%02x ",info[m]);
 	}
 	printf("\n");
 #endif

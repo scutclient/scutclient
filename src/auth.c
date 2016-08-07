@@ -91,6 +91,8 @@ int auth_UDP_Sender(int sock, struct sockaddr_in serv_addr, unsigned char *send_
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
+		LogWrite(ERROR,"%s","auth_8021x_Sender error.\n");
+		perror("auth_8021x_Sender error");
 		return 0;
 	}
 	return 1;
