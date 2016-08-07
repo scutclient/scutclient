@@ -18,6 +18,5 @@ scutclient_SOURCES=\
 		src/drcom.h \
 		src/tracelog.h \
 		$(NULL)
-scutclient_LDADD=-lpcap
 
 

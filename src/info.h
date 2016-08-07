@@ -4,6 +4,7 @@
 #include <string.h>
 
 void GetWanIpAddressFromDevice(unsigned char info[]);
+void GetUdpServerIpAddressFromDevice(unsigned char info[]);
 void GetUdpServerIpFromDevice(uint8_t info[]);
 void GetWanIpFromDevice(uint8_t info[]);
 void GetWanNetMaskFromDevice(uint8_t info[]);

@@ -70,7 +70,7 @@ am_scutclient_OBJECTS = main.$(OBJEXT) auth.$(OBJEXT) \
 	functions.$(OBJEXT) young.$(OBJEXT) info.$(OBJEXT) \
 	drcom.$(OBJEXT) tracelog.$(OBJEXT) md5.$(OBJEXT)
 scutclient_OBJECTS = $(am_scutclient_OBJECTS)
-scutclient_DEPENDENCIES =
+scutclient_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -147,7 +147,6 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-V_PCAPDEP = @V_PCAPDEP@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -210,7 +209,6 @@ scutclient_SOURCES = \
 		src/tracelog.h \
 		$(NULL)
 
-scutclient_LDADD = -lpcap
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 

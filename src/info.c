@@ -8,6 +8,7 @@ static uint8_t	gateway[4] = {0};
 static uint8_t	dns[4] = {0};
 static uint8_t	MAC[6] = {0};
 static unsigned char		ipaddr[16] = {0};
+static unsigned char		udp_server_ipaddr[16] = {0};
 static unsigned char		UserName[32] = {0};
 static unsigned char		Password[32] = {0};
 static unsigned char		DeviceName[32] = {0};
@@ -165,6 +166,12 @@ void GetWanIpAddressFromDevice(unsigned char info[])
 {
 	getIpInfoFromDevice(ipaddr, GET_WAN_IP);
 	strcpy(info, ipaddr);
+}
+
+void GetUdpServerIpAddressFromDevice(unsigned char info[])
+{
+	getIpInfoFromDevice(udp_server_ipaddr, GET_UDP_SERVER_IP);
+	strcpy(info, udp_server_ipaddr);
 }
 
 void GetUdpServerIpFromDevice(uint8_t info[])

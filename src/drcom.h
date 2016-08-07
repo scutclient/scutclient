@@ -1,7 +1,6 @@
 #include <time.h>
 #include <netinet/in.h>
 #include <stdint.h>
-#include <pcap.h> 
 
 
 size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet );
