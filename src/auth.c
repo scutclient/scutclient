@@ -71,6 +71,16 @@ int checkWanStatus(int sock)
 		return 0;
 	}
 	
+	//获取接口索引
+	if(-1 == ioctl(sock,SIOCGIFINDEX,&ifr))
+	{
+		LogWrite(ERROR,"%s","Get WAN index error.\n");
+        perror("Get WAN index error.\n");
+		return 0;
+    }
+    auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
+	auth_8021x_addr.sll_family = PF_PACKET;
+	
 	// 设置网卡为混杂模式
 	ifr.ifr_flags |= IFF_PROMISC;
 	err = ioctl(sock, SIOCSIFFLAGS, &ifr);
@@ -80,6 +90,8 @@ int checkWanStatus(int sock)
 		perror("ioctl set IFF_PROMISC error");
 		return 0;
 	}
+	
+
 	return 1;
 }
 
@@ -113,7 +125,7 @@ int auth_UDP_Receiver(int sock, char *recv_data, int recv_len)
 int auth_8021x_Sender(int sock, unsigned char *send_data, int send_data_len)
 {
 	int ret = 0;
-	ret = sendto(sock, send_data, send_data_len, 0, NULL,  0);  
+	ret = sendto(sock, send_data, send_data_len, 0, (struct sockaddr*)&auth_8021x_addr,sizeof(auth_8021x_addr));  
 	//将字符串发送给server,,,ret=sendto(已建立的连接，send包，send包长度，flags设0不变，结构体，结构体长度)
 	if (ret != send_data_len) 
 	{ 

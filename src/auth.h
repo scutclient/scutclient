@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <net/if.h>
 #include <linux/if_ether.h>
+#include <linux/if_packet.h>
 
 #include "functions.h"
 #include "young.h"
@@ -27,4 +28,6 @@
 #define SERVER_ADDR "202.38.210.131"
 #define SERVER_PORT 61440
 
+struct sockaddr_ll auth_8021x_addr;
+	
 int Authentication(int client);
