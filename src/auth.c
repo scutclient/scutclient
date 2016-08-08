@@ -95,8 +95,7 @@ int checkWanStatus(int sock)
 int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int send_data_len)
 {
 	int ret = 0;
-	ret = sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));  
-	//将字符串发送给server,,,ret=sendto(已建立的连接，send包，send包长度，flags设0不变，sockaddr结构体，前者长度)
+	ret = sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
@@ -122,8 +121,7 @@ int auth_UDP_Receiver(char *recv_data, int recv_len)
 int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
 {
 	int ret = 0;
-	ret = send(auth_8021x_sock, send_data, send_data_len, 0);  
-	//将字符串发送给server,,,ret=sendto(已建立的连接，send包，send包长度，flags设0不变，结构体，结构体长度)
+	ret = send(auth_8021x_sock, send_data, send_data_len, 0);
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
@@ -223,7 +221,7 @@ void sendLogoffPkt()
 	}
 }
 
-int set_unblock(int fd, int flags)    /* flags are file status flags to turn on */
+int set_unblock(int fd, int flags)
 {
 	int val;
 
@@ -233,7 +231,7 @@ int set_unblock(int fd, int flags)    /* flags are file status flags to turn on 
 		perror("fcntl F_GETFL error.\n");
 		return -1;
 	}
-	val |= flags;       /* turn on flags */
+	val |= flags;
 
 	if(fcntl(fd, F_SETFL, val) < 0) 
 	{
@@ -381,15 +379,14 @@ int Authentication(int client)
 		printf("Drcom Mode.\n");
 		LogWrite(INF,"%s","DR.COM INIT SOCKET\n");
 		printf("DR.COM INIT SOCKET\n");
-		int auth_udp_sock=0;//定义整形变量auth_udp_sock
-		unsigned char send_data[ETH_FRAME_LEN];                   //定义无符号字符串send_data[1000]  长度为1000
-		int send_data_len = 0;                   					//定义无符号字符串send_data实际发送长度
-		char recv_data[ETH_FRAME_LEN];                            //定义无符号字符串recv_data[1000]  长度为1000
-		int recv_data_len = 0;                   					//定义无符号字符串recv_data实际发送长度
-		struct sockaddr_in serv_addr,local_addr;                              //定义结构体sockaddr_in        serv_addr
 
+		unsigned char send_data[ETH_FRAME_LEN];
+		int send_data_len = 0;
+		char recv_data[ETH_FRAME_LEN];
+		int recv_data_len = 0;
+		struct sockaddr_in serv_addr,local_addr;
+		//静态全局变量auth_udp_sock
 		auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-		//AF_INET决定了要用ipv4地址（32位的）与端口号（16位的）的组合，。数据报式Socket（SOCK_DGRAM）是一种无连接的Socket，对应于无连接的UDP服务应用
 		if (auth_udp_sock < 0) 
 		{
 			//auth_udp_sock<0即错误
@@ -411,15 +408,15 @@ int Authentication(int client)
 			close(auth_8021x_sock);
 			exit(EXIT_FAILURE);
 		}
-		serv_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
+		serv_addr.sin_family = AF_INET;
 		unsigned char server_ip[16]= {0};
 		GetUdpServerIpAddressFromDevice(server_ip);
-		serv_addr.sin_addr.s_addr = inet_addr(server_ip);     //将服务器IP转换成一个长整数型数  
-		serv_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
+		serv_addr.sin_addr.s_addr = inet_addr(server_ip);
+		serv_addr.sin_port = htons(SERVER_PORT);
 
-		local_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
-		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);       //将服务器IP转换成一个长整数型数
-		local_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
+		local_addr.sin_family = AF_INET;
+		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+		local_addr.sin_port = htons(SERVER_PORT);
 		
 		bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
 		
@@ -478,7 +475,7 @@ typedef enum {MISC_2800_01_TYPE=0x01, MISC_2800_02_TYPE=0x02, MISC_2800_03_TYPE=
 int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 {
 	int data_len = 0;
-		// 根据收到的recv_data，填充相应的send_data
+	// 根据收到的recv_data，填充相应的send_data
 	if (recv_data[0] == 0x07)
 	{
 		switch ((DRCOM_Type)recv_data[2])
@@ -533,7 +530,8 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
 						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
 					break;
-					case MISC_2800_04_TYPE: // 收到这个代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
+					case MISC_2800_04_TYPE: 
+					// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 						BaseHeartbeatTime = time(NULL);
 						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
 						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
