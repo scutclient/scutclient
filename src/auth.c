@@ -81,6 +81,15 @@ int checkWanStatus(int sock)
     auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	
+		
+	// 绑定sock，只接收指定端口发来的报文
+	if (bind(sock, (struct sockaddr*)&auth_8021x_addr, sizeof(struct sockaddr_ll)) < 0)
+	{
+		LogWrite(ERROR,"%s","Bind WAN interface failed.\n");
+		perror("Bind WAN interface failed.\n");
+		return 0;
+	}
+	
 	// 设置网卡为混杂模式
 	ifr.ifr_flags |= IFF_PROMISC;
 	err = ioctl(sock, SIOCSIFFLAGS, &ifr);
@@ -125,7 +134,7 @@ int auth_UDP_Receiver(int sock, char *recv_data, int recv_len)
 int auth_8021x_Sender(int sock, unsigned char *send_data, int send_data_len)
 {
 	int ret = 0;
-	ret = sendto(sock, send_data, send_data_len, 0, (struct sockaddr*)&auth_8021x_addr,sizeof(auth_8021x_addr));  
+	ret = send(sock, send_data, send_data_len, 0);  
 	//将字符串发送给server,,,ret=sendto(已建立的连接，send包，send包长度，flags设0不变，结构体，结构体长度)
 	if (ret != send_data_len) 
 	{ 
@@ -139,7 +148,7 @@ int auth_8021x_Receiver(int sock, char *recv_data)
 {
 	int ret = 0;
 	int recv_len = 0;
-	ret = recvfrom(sock, recv_data, recv_len, 0, NULL, NULL);
+	ret = recv(sock, recv_data, recv_len, 0);
 	if(ret < 0)
 	{ 
 		//ret小于0代表没收到
