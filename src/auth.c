@@ -52,7 +52,7 @@ int checkWanStatus(int sock)
 	bzero(&ifr,sizeof(ifr));
 	unsigned char devicename[16] = {0};
 	GetDeviceName(devicename);
-    strcpy(ifr.ifr_name,devicename);
+	strcpy(ifr.ifr_name,devicename);
 	int	err = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if( err < 0)
 	{
@@ -75,10 +75,10 @@ int checkWanStatus(int sock)
 	if(-1 == ioctl(sock,SIOCGIFINDEX,&ifr))
 	{
 		LogWrite(ERROR,"%s","Get WAN index error.\n");
-        perror("Get WAN index error.\n");
+		perror("Get WAN index error.\n");
 		return 0;
-    }
-    auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
+	}
+	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	
 	// 设置网卡为混杂模式(必须在bind前)
@@ -145,7 +145,7 @@ int auth_8021x_Receiver(char *recv_data)
 	}
 	return 1;
 }
- 
+
 size_t appendStartPkt(uint8_t header[])
 {
 	 if(clientHandler == YOUNG_CLIENT)
@@ -178,8 +178,8 @@ size_t appendResponseIdentity(const uint8_t request[])
 
 size_t appendResponseMD5(const uint8_t request[])
 {
-	 if(clientHandler == YOUNG_CLIENT)
-	 {
+	if(clientHandler == YOUNG_CLIENT)
+	{
 		unsigned char ipaddress[16] = {0};
 		GetWanIpAddressFromDevice(ipaddress);
 		unsigned char username[32] = {0};
@@ -187,15 +187,15 @@ size_t appendResponseMD5(const uint8_t request[])
 		unsigned char password[32] = {0};
 		GetPassword(password);
 		return AppendYoungResponseMD5(request, EthHeader, ipaddress, username, password, Packet);
-	 }
-	 else if (clientHandler == DRCOM_CLIENT)
-	 {
+	}
+	else if (clientHandler == DRCOM_CLIENT)
+	{
 		unsigned char username[32] = {0};
 		GetUserName(username);
 		unsigned char password[32] = {0};
 		GetPassword(password);
 		return AppendDrcomResponseMD5(request, EthHeader, username, password, Packet);
-	 }
+	}
 }
 
 void sendLogoffPkt()
@@ -203,45 +203,45 @@ void sendLogoffPkt()
 	LogWrite(INF,"%s","Send LOGOFF.\n");
 	printf("Send LOGOFF.\n");
 	// 连发三次，确保已经下线
-	 if(clientHandler == YOUNG_CLIENT)
-	 {
+	if(clientHandler == YOUNG_CLIENT)
+	{
 		packetlen = AppendYoungLogoffPkt(EthHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
 		packetlen = AppendYoungLogoffPkt(MultcastHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
 		packetlen = AppendYoungLogoffPkt(BroadcastHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
-	 }
-	 else if (clientHandler == DRCOM_CLIENT)
-	 {
+	}
+	else if (clientHandler == DRCOM_CLIENT)
+	{
 		packetlen = AppendDrcomLogoffPkt(EthHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
 		packetlen = AppendDrcomLogoffPkt(MultcastHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
 		packetlen = AppendDrcomLogoffPkt(BroadcastHeader, Packet);
 		auth_8021x_Sender(Packet, packetlen);
-	 }
+	}
 }
 
 int set_unblock(int fd, int flags)    /* flags are file status flags to turn on */
 {
-    int val;
- 
-    if((val = fcntl(fd, F_GETFL, 0)) < 0) 
+	int val;
+
+	if((val = fcntl(fd, F_GETFL, 0)) < 0) 
 	{
 		LogWrite(ERROR,"%s", "fcntl F_GETFL error.\n");
-        perror("fcntl F_GETFL error.\n");
-        return -1;
-    }
-    val |= flags;       /* turn on flags */
- 
-    if(fcntl(fd, F_SETFL, val) < 0) 
+		perror("fcntl F_GETFL error.\n");
+		return -1;
+	}
+	val |= flags;       /* turn on flags */
+
+	if(fcntl(fd, F_SETFL, val) < 0) 
 	{
 		LogWrite(ERROR,"%s", "fcntl F_SETFL error\n");
-        perror("fcntl F_SETFL error.\n");
-        return -1;
-    }
-    return 0;
+		perror("fcntl F_SETFL error.\n");
+		return -1;
+	}
+	return 0;
 }
 
 void initAuthenticationInfo()
@@ -328,7 +328,7 @@ int Authentication(int client)
 	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
 	
 	// 非阻塞(必须在bind前)
-    if(set_unblock(auth_8021x_sock, O_NONBLOCK)<0)
+	if(set_unblock(auth_8021x_sock, O_NONBLOCK)<0)
 	{
 		LogWrite(ERROR,"%s","set unblock failed.\n");
 		perror("set unblock failed.\n");
@@ -381,20 +381,22 @@ int Authentication(int client)
 		printf("Drcom Mode.\n");
 		LogWrite(INF,"%s","DR.COM INIT SOCKET\n");
 		printf("DR.COM INIT SOCKET\n");
-        int auth_udp_sock=0;//定义整形变量auth_udp_sock
-        unsigned char send_data[ETH_FRAME_LEN];                   //定义无符号字符串send_data[1000]  长度为1000
+		int auth_udp_sock=0;//定义整形变量auth_udp_sock
+		unsigned char send_data[ETH_FRAME_LEN];                   //定义无符号字符串send_data[1000]  长度为1000
 		int send_data_len = 0;                   					//定义无符号字符串send_data实际发送长度
-        char recv_data[ETH_FRAME_LEN];                            //定义无符号字符串recv_data[1000]  长度为1000
+		char recv_data[ETH_FRAME_LEN];                            //定义无符号字符串recv_data[1000]  长度为1000
 		int recv_data_len = 0;                   					//定义无符号字符串recv_data实际发送长度
-        struct sockaddr_in serv_addr,local_addr;                              //定义结构体sockaddr_in        serv_addr
-        
-        auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);                     //AF_INET决定了要用ipv4地址（32位的）与端口号（16位的）的组合，。数据报式Socket（SOCK_DGRAM）是一种无连接的Socket，对应于无连接的UDP服务应用
-        if (auth_udp_sock < 0) 
-		{                                            //auth_udp_sock<0即错误
+		struct sockaddr_in serv_addr,local_addr;                              //定义结构体sockaddr_in        serv_addr
+
+		auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+		//AF_INET决定了要用ipv4地址（32位的）与端口号（16位的）的组合，。数据报式Socket（SOCK_DGRAM）是一种无连接的Socket，对应于无连接的UDP服务应用
+		if (auth_udp_sock < 0) 
+		{
+			//auth_udp_sock<0即错误
 			LogWrite(ERROR,"%s","[drcom]: create auth_udp_sock failed.\n");
 			perror("[drcom]: create auth_udp_sock failed.\n");
-            exit(EXIT_FAILURE);
-        }
+			exit(EXIT_FAILURE);
+		}
 		// 非阻塞(必须在bind前)
 		if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
 		{
@@ -409,17 +411,17 @@ int Authentication(int client)
 			close(auth_8021x_sock);
 			exit(EXIT_FAILURE);
 		}
-        serv_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
+		serv_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
 		unsigned char server_ip[16]= {0};
 		GetUdpServerIpAddressFromDevice(server_ip);
-        serv_addr.sin_addr.s_addr = inet_addr(server_ip);     //将服务器IP转换成一个长整数型数  
-        serv_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
-        
-        local_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
-        local_addr.sin_addr.s_addr = htonl(INADDR_ANY);       //将服务器IP转换成一个长整数型数
-        local_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
+		serv_addr.sin_addr.s_addr = inet_addr(server_ip);     //将服务器IP转换成一个长整数型数  
+		serv_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
+
+		local_addr.sin_family = AF_INET;                           //这三句填写sockaddr_in结构
+		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);       //将服务器IP转换成一个长整数型数
+		local_addr.sin_port = htons(SERVER_PORT);                  //将端口高低位互换
 		
-        bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
+		bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
 		
 		loginToGetServerMAC(recv_8021x_buf);
 		
@@ -587,7 +589,8 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		}
 	}
 	else if ((EAP_Code)recv_data[18] == FAILURE)
-	{	// 处理认证失败信息
+	{	
+		// 处理认证失败信息
 		success_8021x = 0;
 		uint8_t errtype = recv_data[22];
 		uint8_t msgsize = recv_data[23];
