@@ -2,6 +2,7 @@
 config option
 	option enable '1'
 	option boot '1'
+	option debug '0'
 	option client 'SCUT Drcom'
 
 config scutclient

@@ -52,7 +52,7 @@ int checkWanStatus(int sock)
 	bzero(&ifr,sizeof(ifr));
 	unsigned char devicename[16] = {0};
 	GetDeviceName(devicename);
-	strcpy(ifr.ifr_name,devicename);
+    strcpy(ifr.ifr_name,devicename);
 	int	err = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if( err < 0)
 	{

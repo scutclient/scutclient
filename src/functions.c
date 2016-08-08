@@ -3,21 +3,24 @@
 
 void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
 {
-#ifdef PRINTINFO
-	printf("\n*****************Send %s info***************************\n",type);
-	int m,n=0;
-	for(m=0;m<=packetlen-1;m++)
+	unsigned char debug[8] = {0};
+	GetDebugFromDevice(debug);
+	if(strcmp(debug,"1") == 0)
 	{
-	n++;
-	if(n==17)
-	{
-	printf("\n");
-	n=1;
+		printf("\n*****************Send %s info***************************\n",type);
+		int m,n=0;
+		for(m=0;m<=packetlen-1;m++)
+		{
+			n++;
+			if(n==17)
+			{
+				printf("\n");
+				n=1;
+			}
+			printf("%02x ",info[m]);
+		}
+		printf("\n");
 	}
-	printf("%02x ",info[m]);
-	}
-	printf("\n");
-#endif
 }
 
 void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[], const uint8_t srcMD5[])
