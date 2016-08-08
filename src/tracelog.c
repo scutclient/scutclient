@@ -38,15 +38,15 @@ static unsigned char ReadConfig(char *path){
  *日志设置信息
  * */
 static LOGSET *getlogset(){
-	char value[]="/tmp/scutclient_";
-	char data[50]={0x0};
+    char value[]="/tmp/scutclient_";
+    char data[50]={0x0};
     getdate(data);
-	strcat(data,".log");
-	strcat(value,data);
-	memcpy(logsetting.filepath,value,strlen(value));
+    strcat(data,".log");
+    strcat(value,data);
+    memcpy(logsetting.filepath,value,strlen(value));
     logsetting.loglevel=INF;
     logsetting.maxfilelen=1024;
-	return &logsetting;
+    return &logsetting;
 }
  
 /*

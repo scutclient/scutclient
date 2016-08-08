@@ -26,8 +26,8 @@ void encrypt(unsigned char *info)
 {
 	int i;
 	unsigned char *chartmp= NULL;
-    chartmp = (unsigned char *)malloc(16);
-  	for(i = 0 ; i < 16 ; i++)
+	chartmp = (unsigned char *)malloc(16);
+	for(i = 0 ; i < 16 ; i++)
 	{
 		chartmp[i] = (unsigned char)((info[i] << (i & 0x07)) + (info[i] >> (8-(i & 0x07))));
 	}

@@ -19,5 +19,7 @@ void SetDeviceName(unsigned char *initInfo);
 void InitDeviceName();
 void GetDeviceName(unsigned char *info);
 void GetHostNameFromDevice(unsigned char *info);
-int GetVersionFromDevice(unsigned char *info);
 void GetHashFromDevice(unsigned char *info);
+void GetDebugFromDevice(unsigned char *info);
+int GetVersionFromDevice(unsigned char *info);
+

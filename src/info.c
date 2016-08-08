@@ -33,17 +33,16 @@ const unsigned char GET_DEBUG[]="uci get scutclient.@option[0].debug"; // 获取是
 /* 静态常量*/
 
 int trim(char s[])  
-{  
-   int n;  
-   for(n = strlen(s) - 1; n >= 0; n--)  
-   {  
-      if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n' && s[n]!='\r')  
-      break;  
-      s[n+1] = '\0';  
-   }  
-   return n;  
-}  
-
+{
+	int n;
+	for(n = strlen(s) - 1; n >= 0; n--)
+	{
+		if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n' && s[n]!='\r')
+		break;
+		s[n+1] = '\0';
+	}
+	return n;
+}
 
 int checkInitForChar(unsigned char *str )
 {
@@ -68,40 +67,48 @@ int checkInit( uint8_t info[] ,int infoLen )
 }
 
 void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen)  
-{  
-    short i;  
-    unsigned char highByte, lowByte;  
-      
-    for (i = 0; i < sourceLen; i += 2)  
-    {  
-        highByte = toupper(source[i]);  
-        lowByte  = toupper(source[i + 1]);  
-  
-        if (highByte > 0x39)  
-            highByte -= 0x37;  
-        else  
-            highByte -= 0x30;  
-  
-        if (lowByte > 0x39)  
-            lowByte -= 0x37;  
-        else  
-            lowByte -= 0x30;  
-  
-        dest[i / 2] = (highByte << 4) | lowByte;  
-    }  
-    return ;  
-}  
+{
+	short i;
+	unsigned char highByte, lowByte;
+
+	for (i = 0; i < sourceLen; i += 2)
+	{
+		highByte = toupper(source[i]);
+		lowByte= toupper(source[i + 1]);
+
+		if (highByte > 0x39)
+		{
+			highByte -= 0x37;
+		}
+		else
+		{
+			highByte -= 0x30;
+		}
+
+		if (lowByte > 0x39)
+		{
+			lowByte -= 0x37;
+		}
+		else
+		{
+			lowByte -= 0x30;
+		}
+
+		dest[i / 2] = (highByte << 4) | lowByte;
+	}
+	return ;
+}
 
 void transIP( unsigned char *str, uint8_t iphex[] )
 {
 	unsigned char *p;
 	int count=0;
 	p = strtok(str, ".");
-   	 if(p != NULL)
-	{   
+	if(p != NULL)
+	{
 		iphex[count++] = atol(p);
 		while(1)
-		{   
+		{
 			p = strtok(NULL, ".");
 			if(p == NULL)
 			{
@@ -120,11 +127,11 @@ void transMAC( unsigned char *str, uint8_t MAC[] )
 	unsigned char *p;
 	int count=0;
 	p = strtok(str, ":");
-   	 if(p != NULL)
-	{   
+	if(p != NULL)
+	{
 		MAC[count++] = strtoul(p,0,16);
 		while(1)
-		{   
+		{
 			p = strtok(NULL, ":");
 			if(p == NULL)
 			{
@@ -140,7 +147,7 @@ void transMAC( unsigned char *str, uint8_t MAC[] )
 
 void readInfoFromDevice( unsigned char buf[], const unsigned char *command )
 {
-	FILE   *stream;
+	FILE *stream;
 	stream = popen( command, "r" );
 	if(stream == NULL)
 	{
