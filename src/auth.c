@@ -50,7 +50,7 @@ int checkWanStatus(int sock)
 	bzero(&ifr,sizeof(ifr));
 	char devicename[16] = {0};
 	GetDeviceName(devicename);
-    strcpy(ifr.ifr_name,devicename);
+	strcpy(ifr.ifr_name,devicename);
 	int	err = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if( err < 0)
 	{
@@ -78,7 +78,7 @@ int checkWanStatus(int sock)
         perror("Get WAN index error.\n");
 		return 0;
     }
-    auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
+	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	
 		
@@ -135,7 +135,7 @@ int auth_8021x_Sender(int sock, unsigned char *send_data, int send_data_len)
 {
 	int ret = 0;
 	ret = send(sock, send_data, send_data_len, 0);  
-	//将字符串发送给server,,,ret=sendto(已建立的连接，send包，send包长度，flags设0不变，结构体，结构体长度)
+	//将字符串发送给server,ret=send(已建立的连接，send包，send包长度，flags设0不变)
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
@@ -312,7 +312,7 @@ void loginToGetServerMAC(int sock,uint8_t recv_data[])
 			LogWrite(INF,"%s","Receive the first request.\n");
 			printf("Receive the first request.\n");
 			resev = 1;
-			times = 5;
+			times = 15;
 			// 初始化服务器MAC地址
 			initHeader(EthHeader, recv_data+6);
 			auth_8021x_Handler(sock,recv_data);
