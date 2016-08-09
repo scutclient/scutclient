@@ -56,39 +56,30 @@ int checkWanStatus(int sock)
 	int	err = ioctl(sock, SIOCGIFFLAGS, &ifr);
 	if( err < 0)
 	{
-		LogWrite(ERROR,"%s","ioctl get if_flag error.\n");
+		LogWrite(ERROR,"%s","ioctl get if_flag error.");
 		perror("ioctl get if_flag error");
 		return 0;
 	}
 	if(ifr.ifr_ifru.ifru_flags & IFF_RUNNING )
 	{
-		LogWrite(INF,"%s","WAN had linked up.\n");
-		printf("WAN had linked up.\n");
+		LogWrite(INF,"%s","WAN had linked up.");
 	}
 	else
 	{
-		LogWrite(ERROR,"%s","WAN had linked down. Please do check it.\n");
-		perror("WAN had linked down. Please do check it.\n");
+		LogWrite(ERROR,"%s","WAN had linked down. Please do check it.");
+		perror("WAN had linked down. Please do check it.");
 		return 0;
 	}
 	//获取接口索引
 	if(-1 == ioctl(sock,SIOCGIFINDEX,&ifr))
 	{
-		LogWrite(ERROR,"%s","Get WAN index error.\n");
-		perror("Get WAN index error.\n");
+		LogWrite(ERROR,"%s","Get WAN index error.");
+		perror("Get WAN index error.");
 		return 0;
 	}
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	
-	// 设置网卡为混杂模式(必须在bind前)
-	ifr.ifr_flags |= IFF_PROMISC;
-	err = ioctl(sock, SIOCSIFFLAGS, &ifr);
-	if( err < 0)
-	{
-		perror("ioctl set IFF_PROMISC error");
-		return 0;
-	}
 	return 1;
 }
 
@@ -99,8 +90,8 @@ int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int 
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
-		LogWrite(ERROR,"%s","auth_8021x_Sender error.\n");
-		perror("auth_8021x_Sender error");
+		LogWrite(ERROR,"%s","auth_UDP_Sender error.");
+		perror("auth_UDP_Sender error");
 		return 0;
 	}
 	return 1;
@@ -125,7 +116,8 @@ int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
 	if (ret != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
-		perror("set unblock failed.\n");
+		LogWrite(ERROR,"%s","auth_8021x_Sender failed.");
+		perror("auth_8021x_Sender failed.");
 		return 0;
 	}
 	return 1;
@@ -198,8 +190,7 @@ size_t appendResponseMD5(const uint8_t request[])
 
 void sendLogoffPkt()
 {
-	LogWrite(INF,"%s","Send LOGOFF.\n");
-	printf("Send LOGOFF.\n");
+	LogWrite(INF,"%s","Send LOGOFF.");
 	// 连发三次，确保已经下线
 	if(clientHandler == YOUNG_CLIENT)
 	{
@@ -227,16 +218,16 @@ int set_unblock(int fd, int flags)
 
 	if((val = fcntl(fd, F_GETFL, 0)) < 0) 
 	{
-		LogWrite(ERROR,"%s", "fcntl F_GETFL error.\n");
-		perror("fcntl F_GETFL error.\n");
+		LogWrite(ERROR,"%s", "fcntl F_GETFL error.");
+		perror("fcntl F_GETFL error.");
 		return -1;
 	}
 	val |= flags;
 
 	if(fcntl(fd, F_SETFL, val) < 0) 
 	{
-		LogWrite(ERROR,"%s", "fcntl F_SETFL error\n");
-		perror("fcntl F_SETFL error.\n");
+		LogWrite(ERROR,"%s", "fcntl F_SETFL error");
+		perror("fcntl F_SETFL error.");
 		return -1;
 	}
 	return 0;
@@ -265,6 +256,18 @@ void initAuthenticationInfo()
 	memcpy(EthHeader+6, MAC, 6);
 	EthHeader[12] = 0x88;
 	EthHeader[13] = 0x8e;
+	
+	// 打印网络信息到前台显示	
+	uint8_t info[4]= {0};
+	GetWanIpFromDevice(info);
+	LogWrite(INF,"%s","IP : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
+	GetWanNetMaskFromDevice(info);
+	LogWrite(INF,"%s","Netmask : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
+	GetWanGatewayFromDevice(info);
+	LogWrite(INF,"%s","Gateway : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
+	GetWanDnsFromDevice(info);
+	LogWrite(INF,"%s","Dns : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
+	LogWrite(INF,"%s","MAC : %02x:%02x:%02x:%02x:%02x:%02x",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
 void loginToGetServerMAC(uint8_t recv_data[])
@@ -278,7 +281,6 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			packetlen = appendStartPkt(MultcastHeader);
 			auth_8021x_Sender(Packet, packetlen);
 			LogWrite(INF,"%s","Client: Multcast Start.");
-			printf("Client: Multcast Start.\n");
 		}
 		// 当之前多播的时候，设置为单播
 		else if(Packet[1] == 0x80)
@@ -286,7 +288,6 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			packetlen = appendStartPkt(UnicastHeader);
 			auth_8021x_Sender(Packet, packetlen);
 			LogWrite(INF,"%s","Client: Unicast Start.");
-			printf("Client: Unicast Start.\n");
 		}
 		// 当之前单播的时候，设置为广播
 		else if(Packet[1] == 0xd0)
@@ -294,13 +295,12 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			packetlen = appendStartPkt(BroadcastHeader);
 			auth_8021x_Sender(Packet, packetlen);
 			LogWrite(INF,"%s","Client: Broadcast Start.");
-			printf("Client: Broadcast Start.\n");
 		}
 		sleep(2);
 		if(times == 0)
 		{
-			perror("Error! No Response\n");
-			LogWrite(ERROR,"%s", "Error! No Response\n");
+			perror("No Response!");
+			LogWrite(ERROR,"%s", "Error! No Response");
 			// 确保下线
 			sendLogoffPkt();
 			exit(-1);
@@ -309,8 +309,7 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		if(auth_8021x_Receiver(recv_data))
 		{
 			//已经收到了
-			LogWrite(INF,"%s","Receive the first request.\n");
-			printf("Receive the first request.\n");
+			LogWrite(INF,"%s","Receive the first request.");
 			resev = 1;
 			times = 15;
 			// 初始化服务器MAC地址
@@ -328,23 +327,23 @@ int Authentication(int client)
 	// 非阻塞(必须在bind前)
 	if(set_unblock(auth_8021x_sock, O_NONBLOCK)<0)
 	{
-		LogWrite(ERROR,"%s","set unblock failed.\n");
-		perror("set unblock failed.\n");
+		LogWrite(ERROR,"%s","Set unblock failed.");
+		perror("Set unblock failed!");
 	}
 	
 	int result = checkWanStatus(auth_8021x_sock);
 	if(result == 0)
 	{
-		LogWrite(ERROR,"%s","Client exit.\n");
-		perror("Client exit.\n");
+		LogWrite(ERROR,"%s","Client exit.");
+		perror("Client Exit!");
 		close(auth_8021x_sock);
 		exit(EXIT_FAILURE);
 	}
 	// 绑定sock，只接收指定端口发来的报文
 	if (bind(auth_8021x_sock, (struct sockaddr*)&auth_8021x_addr, sizeof(struct sockaddr_ll)) < 0)
 	{
-		LogWrite(ERROR,"%s","Bind WAN interface failed.\n");
-		perror("Bind WAN interface failed.\n");
+		LogWrite(ERROR,"%s","Bind WAN interface failed.");
+		perror("Error!");
 		return 0;
 	}
 	initAuthenticationInfo();
@@ -357,8 +356,7 @@ int Authentication(int client)
 	}
 	if(clientHandler==YOUNG_CLIENT)
 	{
-		LogWrite(INF,"%s","SCUTclient Mode.\n");
-		printf("SCUTclient Mode.\n");
+		LogWrite(INF,"%s","SCUTclient Mode.");
 		
 		InitCheckSumForYoung();
 		
@@ -376,9 +374,6 @@ int Authentication(int client)
 	if(clientHandler==DRCOM_CLIENT)
 	{
 		LogWrite(INF,"%s","Drcom Mode.");
-		printf("Drcom Mode.\n");
-		LogWrite(INF,"%s","DR.COM INIT SOCKET\n");
-		printf("DR.COM INIT SOCKET\n");
 
 		unsigned char send_data[ETH_FRAME_LEN];
 		int send_data_len = 0;
@@ -390,8 +385,8 @@ int Authentication(int client)
 		if (auth_udp_sock < 0) 
 		{
 			//auth_udp_sock<0即错误
-			LogWrite(ERROR,"%s","[drcom]: create auth_udp_sock failed.\n");
-			perror("[drcom]: create auth_udp_sock failed.\n");
+			LogWrite(ERROR,"%s","Create auth_udp_sock failed.");
+			perror("Create auth_udp_sock failed.");
 			exit(EXIT_FAILURE);
 		}
 		// 非阻塞(必须在bind前)
@@ -488,67 +483,53 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						{
 							case ALIVE_LOGIN_TYPE:
 								data_len = Drcom_ALIVE_LOGIN_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d\n", recv_data[4],data_len);
-								printf("[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d\n", recv_data[4],data_len);
+								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d", recv_data[4],data_len);
 							break;
 							case ALIVE_HEARTBEAT_TYPE:
 								data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[4],data_len);
-								printf("[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[4],data_len);
+								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[4],data_len);
 							break;
 							default:
 								LogWrite(ERROR,"[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[4]);
-								printf("[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!\n", recv_data[4]);
-								printf("Error! Unexpected request type!Restart Login...\n");
 								data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 							break;
 						}
 					break;
 					case FILE_TYPE:
 						data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[3],data_len);
-						printf("[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[3],data_len);
+						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[3],data_len);
 					break;
 					default:
 						LogWrite(ERROR,"[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[3]);
-						printf("[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!\n", recv_data[3]);
-						printf("Error! Unexpected request type!Restart Login...\n");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
 			break;
 			case MISC_3000:
 				data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[2],data_len);
-				printf("[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d\n", recv_data[2],data_len);
+				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[2],data_len);
 			break;
 			case MISC_2800:
 				switch ((DRCOM_MISC_2800_Type)recv_data[5])
 				{
 					case MISC_2800_02_TYPE:
 						data_len = Drcom_MISC_2800_03_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
-						printf("[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d\n", recv_data[5],data_len);
+						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d", recv_data[5],data_len);
 					break;
 					case MISC_2800_04_TYPE: 
 					// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 						BaseHeartbeatTime = time(NULL);
 						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
-						printf("[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d\n", recv_data[5],data_len);
+						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d", recv_data[5],data_len);
 					break;
 					default:
 						LogWrite(ERROR,"[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[5]);
-						printf("[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!\n", recv_data[5]);
-						printf("Error! Unexpected request type!Restart Login...\n");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
 			break;
 			default:
 				LogWrite(ERROR,"[DRCOM_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[2]);
-				printf("[DRCOM_Type] UDP_Server: Request (type:%d)!\n", recv_data[2]);
-				printf("Error! Unexpected request type!Restart Login...\n");
 				data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 			break;
 		}
@@ -565,22 +546,16 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		{
 			case IDENTITY:
 				LogWrite(INF,"[%d] Server: Request Identity!", (EAP_ID)recv_data[19]);
-				printf("[%d] Server: Request Identity!\n", (EAP_ID)recv_data[19]);
 				packetlen = appendResponseIdentity(recv_data);
 				LogWrite(INF,"[%d] Client: Response Identity.", (EAP_ID)recv_data[19]);
-				printf("[%d] Client: Response Identity.\n", (EAP_ID)recv_data[19]);
 				break;
 			case MD5:
 				LogWrite(INF,"[%d] Server: Request MD5-Challenge!", (EAP_ID)recv_data[19]);
-				printf("[%d] Server: Request MD5-Challenge!\n", (EAP_ID)recv_data[19]);
 				packetlen = appendResponseMD5(recv_data);
 				LogWrite(INF,"[%d] Client: Response MD5-Challenge.", (EAP_ID)recv_data[19]);
-				printf("[%d] Client: Response MD5-Challenge.\n", (EAP_ID)recv_data[19]);
 				break;
 			default:
 				LogWrite(INF,"[%d] Server: Request (type:%d)!Error! Unexpected request type!", (EAP_ID)recv_data[19], (EAP_Type)recv_data[22]);
-				printf("[%d] Server: Request (type:%d)!\n", (EAP_ID)recv_data[19], (EAP_Type)recv_data[22]);
-				printf("Error! Unexpected request type\n");
 				LogWrite(INF,"%s", "#scutclient Exit#");
 				exit(-1);
 				break;
@@ -594,10 +569,8 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		uint8_t msgsize = recv_data[23];
 		uint8_t infocode[2] = {recv_data[28],recv_data[29]};
 		const char *msg = (const char*) &recv_data[24];
-		LogWrite(INF,"[%d] Server: Failure.",(EAP_ID)recv_data[19]);
-		printf("[%d] Server: Failure.\n", (EAP_ID)recv_data[19]);
-		LogWrite(INF,"Failure Message : %s",msg);
-		printf("Failure Message : %s\n", msg);
+		LogWrite(ERROR,"[%d] Server: Failure.",(EAP_ID)recv_data[19]);
+		LogWrite(ERROR,"Failure Message : %s",msg);
 		if (times>0)
 		{
 			times--;
@@ -605,24 +578,20 @@ void auth_8021x_Handler(uint8_t recv_data[])
 			/* 主动发起认证会话 */
 			packetlen = appendStartPkt(EthHeader);
 			LogWrite(INF,"%s","Client: Restart.");
-			printf("Client: Restart.\n");
 			auth_8021x_Sender(Packet, packetlen);
 			return ;
 		}
 		else
 		{
 			LogWrite(INF,"%s","Reconnection failed.");
-			printf("Reconnection failed.\n");
 			exit(-1);
 		}
 		LogWrite(INF,"errtype=0x%02x", errtype);
-		printf("errtype=0x%02x\n", errtype);
 		exit(-1);
 	}
 	else if ((EAP_Code)recv_data[18] == SUCCESS)
 	{
 		LogWrite(INF,"[%d] Server: Success.", recv_data[19]);
-		printf("[%d] Server: Success.\n", recv_data[19]);
 		times=15;
 		success_8021x = 1;
 		return;

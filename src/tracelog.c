@@ -70,31 +70,45 @@ static void settime(){
  *不定参打印
  * */
 static void PrintfLog(char * fromat,va_list args){
-    int d;
+    int d,x;
     char c,*s;
     while(*fromat)
     {
-        switch(*fromat){
-            case 's':{
+        switch(*fromat)
+		{
+            case 's':
                 s = va_arg(args, char *);
                 fprintf(loging.logfile,"%s",s);
-                break;}
-            case 'd':{
+				printf("%s",s);
+            break;
+            case 'd':
                 d = va_arg(args, int);
                 fprintf(loging.logfile,"%d",d);
-                break;}
-            case 'c':{
+				printf("%d",d);
+            break;
+            case 'c':
                 c = (char)va_arg(args, int);
                 fprintf(loging.logfile,"%c",c);
-                break;}
-            default:{
+				printf("%c",c);
+            break;
+			case 'x':
+                x = (char)va_arg(args, int);
+                fprintf(loging.logfile,"%02x",x);
+				printf("%02x",x);
+            break;
+            default:
                 if(*fromat!='%'&&*fromat!='\n')
+				{
                     fprintf(loging.logfile,"%c",*fromat);
-                break;}
+					printf("%c",*fromat);
+				}
+            break;
         }
         fromat++;
     }
     fprintf(loging.logfile,"%s","]\n");
+	printf("%s","]\n");
+	
 }
  
 static int initlog(unsigned char loglevel){
@@ -130,6 +144,7 @@ static int initlog(unsigned char loglevel){
     }
     //写入日志级别，日志时间
     fprintf(loging.logfile,"[%s] [%s]:[",LogLevelText[loglevel-1],loging.logtime);
+	printf("[%s] [%s]:[",LogLevelText[loglevel-1],loging.logtime);
     return 0;
 }
  

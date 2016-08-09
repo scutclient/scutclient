@@ -38,8 +38,10 @@ int trim(char s[])
 	for(n = strlen(s) - 1; n >= 0; n--)
 	{
 		if(s[n]!=' ' && s[n]!='\t' && s[n]!='\n' && s[n]!='\r')
-		break;
-		s[n+1] = '\0';
+		{
+			break;
+		}
+		s[n] = '\0';
 	}
 	return n;
 }
@@ -157,8 +159,10 @@ void readInfoFromDevice( unsigned char buf[], const unsigned char *command )
 	{
 		fread( buf, sizeof(unsigned char), 64, stream); 
 	}
-	pclose( stream );
+	printf("%d notrim %s",strlen(buf),buf);
 	trim(buf);
+	printf("%d trim %s",strlen(buf),buf);
+	pclose( stream );
 }
 
 void getIpInfoFromDevice( unsigned char buf[], const unsigned char *command )
