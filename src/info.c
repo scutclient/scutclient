@@ -159,10 +159,7 @@ void readInfoFromDevice( unsigned char buf[], const unsigned char *command )
 	{
 		fread( buf, sizeof(unsigned char), 64, stream); 
 	}
-	printf("%d notrim %s",strlen(buf),buf);
 	trim(buf);
-	printf("%d trim %s",strlen(buf),buf);
-	pclose( stream );
 }
 
 void getIpInfoFromDevice( unsigned char buf[], const unsigned char *command )

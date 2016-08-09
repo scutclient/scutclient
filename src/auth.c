@@ -258,16 +258,16 @@ void initAuthenticationInfo()
 	EthHeader[13] = 0x8e;
 	
 	// 打印网络信息到前台显示	
-	uint8_t info[4]= {0};
-	GetWanIpFromDevice(info);
-	LogWrite(INF,"%s","IP : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
-	GetWanNetMaskFromDevice(info);
-	LogWrite(INF,"%s","Netmask : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
-	GetWanGatewayFromDevice(info);
-	LogWrite(INF,"%s","Gateway : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
-	GetWanDnsFromDevice(info);
-	LogWrite(INF,"%s","Dns : %d.%d.%d.%d",info[0],info[1],info[2],info[3]);
-	LogWrite(INF,"%s","MAC : %02x:%02x:%02x:%02x:%02x:%02x",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
+	uint8_t ip[4]= {0};
+	GetWanIpFromDevice(ip);
+	LogWrite(INF,"%s %d.%d.%d.%d","IP :",ip[0],ip[1],ip[2],ip[3]);
+	GetWanNetMaskFromDevice(ip);
+	LogWrite(INF,"%s %d.%d.%d.%d","Netmask :",ip[0],ip[1],ip[2],ip[3]);
+	GetWanGatewayFromDevice(ip);
+	LogWrite(INF,"%s %d.%d.%d.%d","Gateway :",ip[0],ip[1],ip[2],ip[3]);
+	GetWanDnsFromDevice(ip);
+	LogWrite(INF,"%s %d.%d.%d.%d","Dns :",ip[0],ip[1],ip[2],ip[3]);
+	LogWrite(INF,"%s %x:%x:%x:%x:%x:%x","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
 void loginToGetServerMAC(uint8_t recv_data[])
@@ -313,8 +313,11 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			resev = 1;
 			times = 15;
 			// 初始化服务器MAC地址
+			
 			memcpy(EthHeader, recv_data+6,6);
+			LogWrite(INF,"%s %x %x %x %x %x %x ","recv_data :",recv_data[0],recv_data[1],recv_data[2],recv_data[3],recv_data[4],recv_data[5]);
 			auth_8021x_Handler(recv_data);
+			LogWrite(INF,"%s","END auth_8021x_Handler(recv_data).");
 		}
 	}
 }
@@ -392,8 +395,8 @@ int Authentication(int client)
 		// 非阻塞(必须在bind前)
 		if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
 		{
-			LogWrite(ERROR,"%s","set unblock failed.\n");
-			perror("set unblock failed.\n");
+			LogWrite(ERROR,"%s","set unblock failed.");
+			perror("set unblock failed.");
 		}
 		// 检测网口是否连上，并设置混杂模式
 		if(!checkWanStatus(auth_udp_sock))
@@ -483,53 +486,53 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 						{
 							case ALIVE_LOGIN_TYPE:
 								data_len = Drcom_ALIVE_LOGIN_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_LOGIN_TYPE data len=%d", recv_data[4],data_len);
+								LogWrite(INF,"%s%d%s%d","[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:",recv_data[4],")!Response ALIVE_LOGIN_TYPE data len=",data_len);
 							break;
 							case ALIVE_HEARTBEAT_TYPE:
 								data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[4],data_len);
+								LogWrite(INF,"%s%d%s%d","[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:",recv_data[4],")!Response MISC_2800_01_TYPE data len=",data_len);
 							break;
 							default:
-								LogWrite(ERROR,"[DRCOM_ALIVE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[4]);
+								LogWrite(ERROR,"%s%d%s","[DRCOM_ALIVE_Type] UDP_Server: Request (type:", recv_data[4],")!Error! Unexpected request type!Restart Login...");
 								data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 							break;
 						}
 					break;
 					case FILE_TYPE:
 						data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[FILE_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[3],data_len);
+						LogWrite(INF,"%s%d%s%d","[FILE_TYPE] UDP_Server: Request (type:",recv_data[3],")!Response MISC_2800_01_TYPE data len=",data_len);
 					break;
 					default:
-						LogWrite(ERROR,"[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[3]);
+						LogWrite(ERROR,"%s%d%s","[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:", recv_data[3],")!Error! Unexpected request type!Restart Login...");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
 			break;
 			case MISC_3000:
 				data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-				LogWrite(INF,"[MISC_3000] UDP_Server: Request (type:%d)!Response MISC_2800_01_TYPE data len=%d", recv_data[2],data_len);
+				LogWrite(INF,"%s%d%s%d","[MISC_3000] UDP_Server: Request (type:",recv_data[2],")!Response MISC_2800_01_TYPE data len=",data_len);
 			break;
 			case MISC_2800:
 				switch ((DRCOM_MISC_2800_Type)recv_data[5])
 				{
 					case MISC_2800_02_TYPE:
 						data_len = Drcom_MISC_2800_03_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_02_TYPE] UDP_Server: Request (type:%d)!Response MISC_2800_03_TYPE data len=%d", recv_data[5],data_len);
+						LogWrite(INF,"%s%d%s%d","[MISC_2800_02_TYPE] UDP_Server: Request (type:",recv_data[5],")!Response MISC_2800_03_TYPE data len=",data_len);
 					break;
 					case MISC_2800_04_TYPE: 
 					// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 						BaseHeartbeatTime = time(NULL);
 						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"[MISC_2800_04_TYPE] UDP_Server: Request (type:%d)!Response ALIVE_HEARTBEAT_TYPE data len=%d", recv_data[5],data_len);
+						LogWrite(INF,"%s%d%s%d","[MISC_2800_04_TYPE] UDP_Server: Request (type:",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
 					break;
 					default:
-						LogWrite(ERROR,"[DRCOM_MISC_2800_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[5]);
+						LogWrite(ERROR,"%s%d%s","[DRCOM_MISC_2800_Type] UDP_Server: Request (type:", recv_data[5],")!Error! Unexpected request type!Restart Login...");
 						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					break;
 				}
 			break;
 			default:
-				LogWrite(ERROR,"[DRCOM_Type] UDP_Server: Request (type:%d)!Error! Unexpected request type!Restart Login...", recv_data[2]);
+				LogWrite(ERROR,"%s%d%s","[DRCOM_Type] UDP_Server: Request (type:", recv_data[2],")!Error! Unexpected request type!Restart Login...");
 				data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 			break;
 		}
@@ -542,6 +545,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 	// 根据收到的Request，回复相应的Response包
 	if ((EAP_Code)recv_data[18] == REQUEST)
 	{
+		LogWrite(INF,"REQUEST");
 		switch ((EAP_Type)recv_data[22])
 		{
 			case IDENTITY:
@@ -563,6 +567,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 	}
 	else if ((EAP_Code)recv_data[18] == FAILURE)
 	{	
+		LogWrite(INF,"FAILURE");
 		// 处理认证失败信息
 		success_8021x = 0;
 		uint8_t errtype = recv_data[22];
@@ -597,6 +602,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		return;
 	}
 	// 发送
+	LogWrite(INF,"send packetlen = %d",packetlen);
 	auth_8021x_Sender(Packet, packetlen);
 	return ;
 }

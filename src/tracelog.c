@@ -92,7 +92,7 @@ static void PrintfLog(char * fromat,va_list args){
 				printf("%c",c);
             break;
 			case 'x':
-                x = (char)va_arg(args, int);
+                x = (unsigned char)va_arg(args,int);
                 fprintf(loging.logfile,"%02x",x);
 				printf("%02x",x);
             break;
