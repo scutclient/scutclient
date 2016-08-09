@@ -545,21 +545,20 @@ void auth_8021x_Handler(uint8_t recv_data[])
 	// 根据收到的Request，回复相应的Response包
 	if ((EAP_Code)recv_data[18] == REQUEST)
 	{
-		LogWrite(INF,"REQUEST");
 		switch ((EAP_Type)recv_data[22])
 		{
 			case IDENTITY:
-				LogWrite(INF,"[%d] Server: Request Identity!", (EAP_ID)recv_data[19]);
+				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Server: Request Identity!");
 				packetlen = appendResponseIdentity(recv_data);
-				LogWrite(INF,"[%d] Client: Response Identity.", (EAP_ID)recv_data[19]);
+				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Client: Response Identity.");
 				break;
 			case MD5:
-				LogWrite(INF,"[%d] Server: Request MD5-Challenge!", (EAP_ID)recv_data[19]);
+				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Server: Request MD5-Challenge!");
 				packetlen = appendResponseMD5(recv_data);
-				LogWrite(INF,"[%d] Client: Response MD5-Challenge.", (EAP_ID)recv_data[19]);
+				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Client: Response MD5-Challenge.");
 				break;
 			default:
-				LogWrite(INF,"[%d] Server: Request (type:%d)!Error! Unexpected request type!", (EAP_ID)recv_data[19], (EAP_Type)recv_data[22]);
+				LogWrite(INF,"[%d] %s%d%s",(EAP_ID)recv_data[19],"Server: Request (type:",(EAP_Type)recv_data[22],")!Error! Unexpected request type!");
 				LogWrite(INF,"%s", "#scutclient Exit#");
 				exit(-1);
 				break;
@@ -567,15 +566,12 @@ void auth_8021x_Handler(uint8_t recv_data[])
 	}
 	else if ((EAP_Code)recv_data[18] == FAILURE)
 	{	
-		LogWrite(INF,"FAILURE");
 		// 处理认证失败信息
 		success_8021x = 0;
 		uint8_t errtype = recv_data[22];
 		uint8_t msgsize = recv_data[23];
 		uint8_t infocode[2] = {recv_data[28],recv_data[29]};
-		const char *msg = (const char*) &recv_data[24];
-		LogWrite(ERROR,"[%d] Server: Failure.",(EAP_ID)recv_data[19]);
-		LogWrite(ERROR,"Failure Message : %s",msg);
+		LogWrite(ERROR,"[%d] %s",(EAP_ID)recv_data[19],"Server: Failure.");
 		if (times>0)
 		{
 			times--;
@@ -591,18 +587,18 @@ void auth_8021x_Handler(uint8_t recv_data[])
 			LogWrite(INF,"%s","Reconnection failed.");
 			exit(-1);
 		}
-		LogWrite(INF,"errtype=0x%02x", errtype);
+		LogWrite(INF,"%s%x","errtype=0x", errtype);
 		exit(-1);
 	}
 	else if ((EAP_Code)recv_data[18] == SUCCESS)
 	{
-		LogWrite(INF,"[%d] Server: Success.", recv_data[19]);
+		LogWrite(INF,"[%d] %s", recv_data[19],"Server: Success.");
 		times=15;
 		success_8021x = 1;
 		return;
 	}
 	// 发送
-	LogWrite(INF,"send packetlen = %d",packetlen);
+	LogWrite(INF,"%s%d","send packetlen = ",packetlen);
 	auth_8021x_Sender(Packet, packetlen);
 	return ;
 }
