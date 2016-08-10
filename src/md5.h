@@ -1,96 +1,91 @@
-//MD5 function START
-
-// Copyright (c) 2011 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-// The original file was copied from sqlite, and was in the public domain.
-
 /*
- * This code implements the MD5 message-digest algorithm.
- * The algorithm is due to Ron Rivest.  This code was
- * written by Colin Plumb in 1993, no copyright is claimed.
- * This code is in the public domain; do with it what you wish.
- *
- * Equivalent code is available from RSA Data Security, Inc.
- * This code has been tested against that, and is equivalent,
- * except that you don't need to include two pages of legalese
- * with every copy.
- *
- * To compute the message digest of a chunk of bytes, declare an
- * MD5Context structure, pass it to MD5Init, call MD5Update as
- * needed on buffers full of bytes, and then call MD5Final, which
- * will fill a supplied 16-byte array with the digest.
+  Copyright (C) 1999, 2002 Aladdin Enterprises.  All rights reserved.
+
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any damages
+  arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any purpose,
+  including commercial applications, and to alter it and redistribute it
+  freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not
+     claim that you wrote the original software. If you use this software
+     in a product, an acknowledgment in the product documentation would be
+     appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be
+     misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+  L. Peter Deutsch
+  ghost@aladdin.com
+
+ */
+/* $Id: md5.h,v 1.4 2002/04/13 19:20:28 lpd Exp $ */
+/*
+  Independent implementation of MD5 (RFC 1321).
+
+  This code implements the MD5 Algorithm defined in RFC 1321, whose
+  text is available at
+	http://www.ietf.org/rfc/rfc1321.txt
+  The code is derived from the text of the RFC, including the test suite
+  (section A.5) but excluding the rest of Appendix A.  It does not include
+  any code or documentation that is identified in the RFC as being
+  copyrighted.
+
+  The original and principal author of md5.h is L. Peter Deutsch
+  <ghost@aladdin.com>.  Other authors are noted in the change history
+  that follows (in reverse chronological order):
+
+  2002-04-13 lpd Removed support for non-ANSI compilers; removed
+	references to Ghostscript; clarified derivation from RFC 1321;
+	now handles byte order either statically or dynamically.
+  1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
+  1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5);
+	added conditionalization for C++ compilation from Martin
+	Purschke <purschke@bnl.gov>.
+  1999-05-03 lpd Original version.
  */
 
-#ifndef WIN32
-#include <unistd.h>
+#ifndef md5_INCLUDED
+#define md5_INCLUDED
+
+/*
+ * This package supports both compile-time and run-time determination of CPU
+ * byte order.  If ARCH_IS_BIG_ENDIAN is defined as 0, the code will be
+ * compiled to run only on little-endian CPUs; if ARCH_IS_BIG_ENDIAN is
+ * defined as non-zero, the code will be compiled to run only on big-endian
+ * CPUs; if ARCH_IS_BIG_ENDIAN is not defined, the code will be compiled to
+ * run on either big- or little-endian CPUs, but will run slightly less
+ * efficiently on either one than if ARCH_IS_BIG_ENDIAN is defined.
+ */
+
+typedef unsigned char md5_byte_t; /* 8-bit byte */
+typedef unsigned int md5_word_t; /* 32-bit word */
+
+/* Define the state of the MD5 Algorithm. */
+typedef struct md5_state_s {
+    md5_word_t count[2];	/* message length in bits, lsw first */
+    md5_word_t abcd[4];		/* digest buffer */
+    md5_byte_t buf[64];		/* accumulate block */
+} md5_state_t;
+
+#ifdef __cplusplus
+extern "C" 
+{
 #endif
-#include <assert.h>
-#include <string.h>
-#include <stdint.h>
-#include <memory.h>
 
-// Copyright (c) 2011 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/* Initialize the algorithm. */
+void md5_init(md5_state_t *pms);
 
-#ifndef BASE_MD5_H_
-#define BASE_MD5_H_
+/* Append a string to the message. */
+void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
 
+/* Finish the message and return the digest. */
+void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
 
-#define BASE_EXPORT
+#ifdef __cplusplus
+}  /* end extern "C" */
+#endif
 
-// MD5 stands for Message Digest algorithm 5.
-// MD5 is a robust hash function, designed for cyptography, but often used
-// for file checksums.  The code is complex and slow, but has few
-// collisions.
-// See Also:
-//   http://en.wikipedia.org/wiki/MD5
-
-// These functions perform MD5 operations. The simplest call is MD5Sum() to
-// generate the MD5 sum of the given data.
-//
-// You can also compute the MD5 sum of data incrementally by making multiple
-// calls to MD5Update():
-//   MD5Context ctx; // intermediate MD5 data: do not use
-//   MD5Init(&ctx);
-//   MD5Update(&ctx, data1, length1);
-//   MD5Update(&ctx, data2, length2);
-//   ...
-//
-//   MD5Digest digest; // the result of the computation
-//   MD5Final(&digest, &ctx);
-//
-// You can call MD5DigestToBase16() to generate a string of the digest.
-
-// The output of an MD5 operation.
-struct MD5Digest {
-  unsigned char a[16];
-};
-
-// Used for storing intermediate data during an MD5 computation. Callers
-// should not access the data.
-typedef char MD5Context[88];
-
-// Computes the MD5 sum of the given data buffer with the given length.
-// The given 'digest' structure will be filled with the result data.
-BASE_EXPORT void MD5Sum(const void* data, size_t length, struct MD5Digest* digest);
-
-// Initializes the given MD5 context structure for subsequent calls to
-// MD5Update().
-BASE_EXPORT void MD5Init(MD5Context* context);
-
-// For the given buffer of |data| as a StringPiece, updates the given MD5
-// context with the sum of the data. You can call this any number of times
-// during the computation, except that MD5Init() must have been called first.
-BASE_EXPORT void MD5Update(MD5Context* context, const unsigned char *data, size_t length);    //const StringPiece& data);
-
-// Finalizes the MD5 operation and fills the buffer with the digest.
-BASE_EXPORT void MD5Final(struct MD5Digest* digest, MD5Context* context);
-
-BASE_EXPORT void MD5Calc(unsigned char *data, unsigned int len, unsigned char *output);
-
-
-#endif  // BASE_MD5_H_
-
+#endif /* md5_INCLUDED */

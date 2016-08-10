@@ -471,6 +471,11 @@ int Authentication(int client)
 				}
 				if(success_udp_recv)
 				{
+					// 过滤掉非drcom的报文
+					if(recv_data[0]!=0x07)
+					{
+						continue;
+					}
 					send_data_len = Drcom_UDP_Handler(send_data, recv_data);
 					success_udp_recv = 0;
 					tryUdpRecvTimes = 0;
