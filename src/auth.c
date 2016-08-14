@@ -97,6 +97,7 @@ int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int 
 		perror("auth_UDP_Sender error");
 		return 0;
 	}
+	LogWrite(INF,"%s%d","auth_UDP_Sender packetlen = ",packetlen);
 	return 1;
 }
 
@@ -119,6 +120,7 @@ int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
 		perror("auth_8021x_Sender failed.");
 		return 0;
 	}
+	LogWrite(INF,"%s%d","auth_8021x_Sender packetlen = ",packetlen);
 	return 1;
 }
 
@@ -307,6 +309,8 @@ void loginToGetServerMAC(uint8_t recv_data[])
 						// 初始化服务器MAC地址
 						memcpy(EthHeader, recv_data+6,6);
 						auth_8021x_Handler(recv_data);
+						// 发送
+						auth_8021x_Sender(Packet, packetlen);
 						return;
 					}
 				}
@@ -420,6 +424,8 @@ int Authentication(int client)
 							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
 							{
 								auth_8021x_Handler(recv_8021x_buf);
+								// 发送
+								auth_8021x_Sender(Packet, packetlen);
 							}
 						}
 					}
@@ -500,6 +506,8 @@ int Authentication(int client)
 							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
 							{
 								auth_8021x_Handler(recv_8021x_buf);
+								// 发送
+								auth_8021x_Sender(Packet, packetlen);
 							}
 						}
 					} 
@@ -513,6 +521,7 @@ int Authentication(int client)
 								continue;
 							}
 							send_data_len = Drcom_UDP_Handler(send_data, recv_data);
+							auth_UDP_Sender(serv_addr, send_data, send_data_len);
 							// 收取后记下心跳的基线时间，开始记时
 							BaseHeartbeatTime = time(NULL);
 							isHasSend = 0;
@@ -525,6 +534,7 @@ int Authentication(int client)
 			{
 				if(isHasSend == 0)
 				{
+					send_data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 					auth_UDP_Sender(serv_addr, send_data, send_data_len);
 					// 发送后记下基线时间，开始记时
 					WaitUdpRecvTime = time(NULL);
@@ -676,8 +686,5 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		success_8021x = 1;
 		return;
 	}
-	// 发送
-	LogWrite(INF,"%s%d","send packetlen = ",packetlen);
-	auth_8021x_Sender(Packet, packetlen);
 	return ;
 }
