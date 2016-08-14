@@ -19,17 +19,17 @@ static unsigned char		Debug[8] = {0};
 /* 静态变量*/
 
 /* 静态常量*/
-const unsigned char GET_WAN_DEV[]="uci get network.wan.ifname"; // 获取wan口物理端口
-const unsigned char GET_WAN_MAC[]="uci get network.wan.macaddr"; // 获取wan口MAC地址
-const unsigned char GET_WAN_IP[]="uci get network.wan.ipaddr"; // 获取wan口IP地址
-const unsigned char GET_WAN_NETMASK[]="uci get network.wan.netmask"; // 获取wan口netmask
-const unsigned char GET_WAN_GATEWAY[]="uci get network.wan.gateway"; // 获取wan口网关地址
-const unsigned char GET_DNS[]="uci get network.wan.dns | cut -d ' ' -f 1"; // 获取DNS地址
-const unsigned char GET_HOST_NAME[]="uci get scutclient.@drcom[0].hostname"; // 获取主机名字
-const unsigned char GET_UDP_SERVER_IP[]="uci get scutclient.@drcom[0].server_auth_ip"; // 获取UDP认证服务器地址
-const unsigned char GET_VERSION[]="uci get scutclient.@drcom[0].version"; // 获取版本号
-const unsigned char GET_HASH[]="uci get scutclient.@drcom[0].hash"; // 获取HASH值
-const unsigned char GET_DEBUG[]="uci get scutclient.@option[0].debug"; // 获取是否开启debug日志
+const unsigned char GET_WAN_DEV[]="echo eth0"; // 获取wan口物理端口
+const unsigned char GET_WAN_MAC[]="echo f2:3c:91:89:e0:bf"; // 获取wan口MAC地址
+const unsigned char GET_WAN_IP[]="echo 106.187.89.16"; // 获取wan口IP地址
+const unsigned char GET_WAN_NETMASK[]="echo 255.255.255.0"; // 获取wan口netmask
+const unsigned char GET_WAN_GATEWAY[]="echo 106.187.89.254"; // 获取wan口网关地址
+const unsigned char GET_DNS[]="echo 202.112.17.33"; // 获取DNS地址
+const unsigned char GET_HOST_NAME[]="echo SCUT"; // 获取主机名字
+const unsigned char GET_UDP_SERVER_IP[]="echo 202.112.17.33"; // 获取UDP认证服务器地址
+const unsigned char GET_VERSION[]="echo 4472434f4d00cf072a00332e31332e302d32342d67656e65726963"; // 获取版本号
+const unsigned char GET_HASH[]="echo 915e3d0281c3a0bdec36d7f9c15e7a16b59c12b8"; // 获取HASH值
+const unsigned char GET_DEBUG[]="echo 0"; // DEBUG开关
 /* 静态常量*/
 
 int trim(char s[])  

@@ -10,7 +10,7 @@
 #define LOGOFF  0 // 下线标志位
 #define YOUNG_CLIENT  1 // 翼起来客户端标志位
 #define DRCOM_CLIENT  2 // Drcom客户端标志位
-#define DRCOM_UDP_HEARTBEAT_DELAY  600 // Drcom客户端心跳延时秒数，默认600秒
+#define DRCOM_UDP_HEARTBEAT_DELAY  10 // Drcom客户端心跳延时秒数，默认10秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
 #define AUTH_8021X_RECV_DELAY  1 // 客户端收8021x报文延时秒数，默认1秒
 #define AUTH_8021X_RECV_TIMES  10 // 客户端收8021x报文重试次数
@@ -26,7 +26,6 @@ static uint8_t Packet[1024]={0};
 static int resev=0;
 static int times=AUTH_8021X_RECV_TIMES;
 static int success_8021x=0;
-static int success_udp_recv=0;
 static uint8_t EthHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x88,0x8e};
 static uint8_t BroadcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0x88,0x8e};
 static uint8_t MultcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x80,0xc2,0x00,0x00,0x03,0x88,0x8e};
@@ -58,8 +57,7 @@ int checkWanStatus(int sock)
 	unsigned char devicename[16] = {0};
 	GetDeviceName(devicename);
 	strcpy(ifr.ifr_name,devicename);
-	int	err = ioctl(sock, SIOCGIFFLAGS, &ifr);
-	if( err < 0)
+	if(ioctl(sock, SIOCGIFFLAGS, &ifr) < 0)
 	{
 		LogWrite(ERROR,"%s","ioctl get if_flag error.");
 		perror("ioctl get if_flag error");
@@ -76,23 +74,23 @@ int checkWanStatus(int sock)
 		return 0;
 	}
 	//获取接口索引
-	if(EXIT_FAILURE == ioctl(sock,SIOCGIFINDEX,&ifr))
+	if(ioctl(sock,SIOCGIFINDEX,&ifr) < 0)
 	{
 		LogWrite(ERROR,"%s","Get WAN index error.");
 		perror("Get WAN index error.");
 		return 0;
 	}
+	bzero(&auth_8021x_addr,sizeof(auth_8021x_addr));
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
-	
+	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
+	auth_8021x_addr.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST | PACKET_OTHERHOST | PACKET_OUTGOING;
 	return 1;
 }
 
 int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int send_data_len)
 {
-	int ret = 0;
-	ret = sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
-	if (ret != send_data_len) 
+	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
 		LogWrite(ERROR,"%s","auth_UDP_Sender error.");
@@ -114,7 +112,7 @@ int auth_UDP_Receiver(char *recv_data, int recv_len)
 
 int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
 {
-	if (sendto(auth_8021x_sock, send_data, send_data_len, 0, (struct sockaddr *)&auth_8021x_addr,  sizeof(auth_8021x_addr)) < 0) 
+	if (sendto(auth_8021x_sock, send_data, send_data_len, 0, (struct sockaddr *)&auth_8021x_addr,  sizeof(auth_8021x_addr)) != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
 		LogWrite(ERROR,"%s","auth_8021x_Sender failed.");
@@ -270,14 +268,50 @@ void initAuthenticationInfo()
 
 void loginToGetServerMAC(uint8_t recv_data[])
 {
+	fd_set fdR;
+	
 	//先发一次
 	packetlen = appendStartPkt(MultcastHeader);
 	auth_8021x_Sender(Packet, packetlen);
+	LogWrite(INF,"%s","Client: Multcast Start.");
 	times = AUTH_8021X_RECV_TIMES;
 	// 记下基线时间
 	Wait8021xRecvTime = time(NULL);
 	while(resev ==0)
 	{
+		FD_ZERO(&fdR); 
+		FD_SET(auth_8021x_sock, &fdR); 
+		FD_SET(auth_udp_sock, &fdR); 
+		switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
+		{ 
+			case -1: 
+				LogWrite(ERROR,"%s","select socket failed.");
+				perror("select socket failed.");
+			break;
+			case 0: 
+			break;
+			default: 
+				if (FD_ISSET(auth_8021x_sock,&fdR)) 
+				{ 
+					if(auth_8021x_Receiver(recv_data))
+					{
+						// 过滤掉非0x888e的报文
+						if(recv_data[12]!=0x88 && recv_data[13]!=0x8e)
+						{
+							continue;
+						}
+						//已经收到了
+						LogWrite(INF,"%s","Receive the first request.");
+						resev = 1;
+						times = AUTH_8021X_RECV_TIMES;
+						// 初始化服务器MAC地址
+						memcpy(EthHeader, recv_data+6,6);
+						auth_8021x_Handler(recv_data);
+						return;
+					}
+				}
+			break;
+		}
 		if(times <= 0)
 		{
 			perror("No Response!");
@@ -286,10 +320,11 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			sendLogoffPkt();
 			exit(EXIT_FAILURE);
 		}
-		
+			perror("debug");
 		// 当前时间减去基线时间大于设定值的时候再发送
 		if(time(NULL) - Wait8021xRecvTime > AUTH_8021X_RECV_DELAY)
 		{
+		
 			// 记下基线时间，重新记时
 			Wait8021xRecvTime = time(NULL);
 			times--;
@@ -315,33 +350,21 @@ void loginToGetServerMAC(uint8_t recv_data[])
 				LogWrite(INF,"%s","Client: Broadcast Start.");
 			}
 		}
-
-
-		if(auth_8021x_Receiver(recv_data))
-		{
-			// 过滤掉非0x888e的报文
-			if(recv_data[12]!=0x88 && recv_data[13]!=0x8e)
-			{
-				continue;
-			}
-			
-			//已经收到了
-			LogWrite(INF,"%s","Receive the first request.");
-			resev = 1;
-			times = AUTH_8021X_RECV_TIMES;
-			// 初始化服务器MAC地址
-			
-			memcpy(EthHeader, recv_data+6,6);
-			auth_8021x_Handler(recv_data);
-			LogWrite(INF,"%s","END auth_8021x_Handler(recv_data).");
-		}
 	}
 }
 
 int Authentication(int client)
 {	
+	int on = 1;
+	fd_set fdR;
 	clientHandler = client;
-	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+	
+	if((setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)  
+	{  
+		perror("setsockopt failed");  
+		exit(EXIT_FAILURE);  
+	}  
 	
 	//非阻塞(必须在bind前)
 	if(set_unblock(auth_8021x_sock, O_NONBLOCK)<0)
@@ -377,13 +400,30 @@ int Authentication(int client)
 
 		while(resev)
 		{
-			if(auth_8021x_Receiver(recv_8021x_buf))
-			{
-				// 过滤掉非0x888e的报文
-				if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
-				{
-					auth_8021x_Handler(recv_8021x_buf);
-				}
+			FD_ZERO(&fdR); 
+			FD_SET(auth_8021x_sock, &fdR); 
+			FD_SET(auth_udp_sock, &fdR); 
+			switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
+			{ 
+				case -1: 
+					LogWrite(ERROR,"%s","select socket failed.");
+					perror("select socket failed.");
+				break;
+				case 0: 
+				break;
+				default: 
+					if (FD_ISSET(auth_8021x_sock,&fdR)) 
+					{ 
+						if(auth_8021x_Receiver(recv_8021x_buf))
+						{
+							// 过滤掉非0x888e的报文
+							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
+							{
+								auth_8021x_Handler(recv_8021x_buf);
+							}
+						}
+					}
+				break;
 			}
 		}
 	}
@@ -397,6 +437,7 @@ int Authentication(int client)
 		char recv_data[ETH_FRAME_LEN] = {0};
 		int recv_data_len = 0;
 		struct sockaddr_in serv_addr,local_addr;
+		
 		//静态全局变量auth_udp_sock
 		auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 		if (auth_udp_sock < 0) 
@@ -406,81 +447,96 @@ int Authentication(int client)
 			perror("Create auth_udp_sock failed.");
 			exit(EXIT_FAILURE);
 		}
-		// 非阻塞(必须在bind前)
+		// 非阻塞
 		if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
 		{
 			LogWrite(ERROR,"%s","set unblock failed.");
 			perror("set unblock failed.");
 		}
-		// 检测网口是否连上，并设置混杂模式
-		if(!checkWanStatus(auth_udp_sock))
-		{
-			LogWrite(ERROR,"%s","Client exit.");
-			perror("Client exit.");
-			close(auth_8021x_sock);
-			exit(EXIT_FAILURE);
-		}
+		
+		bzero(&serv_addr,sizeof(serv_addr));
 		serv_addr.sin_family = AF_INET;
 		unsigned char server_ip[16]= {0};
 		GetUdpServerIpAddressFromDevice(server_ip);
 		serv_addr.sin_addr.s_addr = inet_addr(server_ip);
 		serv_addr.sin_port = htons(SERVER_PORT);
 
+		bzero(&local_addr,sizeof(local_addr));
 		local_addr.sin_family = AF_INET;
 		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		local_addr.sin_port = htons(SERVER_PORT);
+		
+		if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)  
+		{  
+			perror("setsockopt failed");  
+			exit(EXIT_FAILURE);  
+		}  
 		
 		bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
 		
 		loginToGetServerMAC(recv_8021x_buf);
 		
-		int tryUdpRecvTimes = 0;
+		int isHasSend = 0;
 		send_data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
 		while(resev)
 		{
-			if(auth_8021x_Receiver(recv_8021x_buf))
-			{
-				// 过滤掉非0x888e的报文
-				if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
-				{
-					auth_8021x_Handler(recv_8021x_buf);
-				}
+			FD_ZERO(&fdR); 
+			FD_SET(auth_8021x_sock, &fdR); 
+			FD_SET(auth_udp_sock, &fdR);
+			switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
+			{ 
+				case -1: 
+					LogWrite(ERROR,"%s","select socket failed.");
+					perror("select socket failed.");
+				break;
+				case 0:
+				break;
+				default: 
+					if (FD_ISSET(auth_8021x_sock,&fdR)) 
+					{ 
+						if(auth_8021x_Receiver(recv_8021x_buf))
+						{
+							// 过滤掉非0x888e的报文
+							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
+							{
+								auth_8021x_Handler(recv_8021x_buf);
+							}
+						}
+					} 
+					else if (FD_ISSET(auth_udp_sock,&fdR)) 
+					{
+						if(auth_UDP_Receiver(recv_data, recv_data_len))
+						{
+							// 过滤掉非drcom的报文
+							if(recv_data[0]!=0x07)
+							{
+								continue;
+							}
+							send_data_len = Drcom_UDP_Handler(send_data, recv_data);
+							// 收取后记下心跳的基线时间，开始记时
+							BaseHeartbeatTime = time(NULL);
+							isHasSend = 0;
+						} 
+					}
+	
 			}
-			// 如果8021x协议认证成功并且心跳时间间隔大于设定值
+			// 如果8021x协议认证成功并且心跳时间间隔大于设定值,则发送一次心跳
 			if(success_8021x && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
 			{
-				if(tryUdpRecvTimes > 5)
-				{
-					// 5次没收到重新发送
-					tryUdpRecvTimes = 0;
-				}
-				if(tryUdpRecvTimes == 0)
+				if(isHasSend == 0)
 				{
 					auth_UDP_Sender(serv_addr, send_data, send_data_len);
 					// 发送后记下基线时间，开始记时
 					WaitUdpRecvTime = time(NULL);
+					isHasSend = 1;
 				}
-				// 尝试收报文
-				success_udp_recv = auth_UDP_Receiver(recv_data, recv_data_len);
 				// 当前时间减去基线时间大于设定值的时候再自加
 				if(time(NULL) - WaitUdpRecvTime > DRCOM_UDP_RECV_DELAY)
 				{
-					// 记下基线时间，重新记时
-					WaitUdpRecvTime = time(NULL);
-					tryUdpRecvTimes++;
+					// 设定的DRCOM_UDP_RECV_DELAY时间到，需要发送
+					isHasSend = 0;
 				}
-				if(success_udp_recv)
-				{
-					// 过滤掉非drcom的报文
-					if(recv_data[0]!=0x07)
-					{
-						continue;
-					}
-					send_data_len = Drcom_UDP_Handler(send_data, recv_data);
-					success_udp_recv = 0;
-					tryUdpRecvTimes = 0;
-				}
-			}
+			}		
 		}
 		close(auth_udp_sock);
 	}
@@ -560,7 +616,7 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 			break;
 		}
 	}
-	return 0;
+	return data_len;
 }
 
 void auth_8021x_Handler(uint8_t recv_data[])
