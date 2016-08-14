@@ -23,9 +23,9 @@ typedef enum{
  
 typedef enum{
     NONE=0,
-    INF=1,
-    DEBUG=2,
-    ERROR=4,
+    ERROR=1,
+    INF=2,
+    DEBUG=4,
     ALL=255
 }LOGLEVEL;
  
@@ -43,12 +43,12 @@ typedef struct logseting{
  
 int LogWrite(unsigned char loglevel,char *fromat,...);
 #endif /* LOGC_H_ */
-#define MAXLEVELNUM (3)
+#define MAXLEVELNUM (2)
  
 LOGSET logsetting;
 LOG loging;
  
-const static char LogLevelText[4][10]={"INF","DEBUG","ERROR","ERROR"};
+const static char LogLevelText[4][10]={"ERROR","INF","DEBUG","ERROR"};
  
 static char * getdate(char *date);
  

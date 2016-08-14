@@ -37,14 +37,14 @@ static unsigned char ReadConfig(char *path){
 /*
  *日志设置信息
  * */
-static LOGSET *getlogset(){
+static LOGSET *getlogset(char level[]){
     char value[]="/tmp/scutclient_";
     char data[50]={0x0};
     getdate(data);
     strcat(data,".log");
     strcat(value,data);
     memcpy(logsetting.filepath,value,strlen(value));
-    logsetting.loglevel=INF;
+    logsetting.loglevel=getcode(level);
     logsetting.maxfilelen=1024;
     return &logsetting;
 }
@@ -115,7 +115,7 @@ static int initlog(unsigned char loglevel){
     char strdate[30]={0x0};
     LOGSET *logsetting;
     //获取日志配置信息
-    if((logsetting=getlogset())==NULL){
+    if((logsetting=getlogset(&loglevel))==NULL){
         perror("Get Log Set Fail!");
         return -1;
     }
