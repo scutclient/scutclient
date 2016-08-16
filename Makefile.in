@@ -67,8 +67,8 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_scutclient_OBJECTS = main.$(OBJEXT) auth.$(OBJEXT) \
-	functions.$(OBJEXT) young.$(OBJEXT) info.$(OBJEXT) \
-	drcom.$(OBJEXT) tracelog.$(OBJEXT) md5.$(OBJEXT)
+	functions.$(OBJEXT) info.$(OBJEXT) drcom.$(OBJEXT) \
+	tracelog.$(OBJEXT) md5.$(OBJEXT)
 scutclient_OBJECTS = $(am_scutclient_OBJECTS)
 scutclient_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -195,7 +195,6 @@ scutclient_SOURCES = \
 		src/main.c \
 		src/auth.c \
 		src/functions.c \
-		src/young.c \
 		src/info.c \
 		src/drcom.c \
 		src/tracelog.c \
@@ -203,7 +202,6 @@ scutclient_SOURCES = \
 		src/md5.h \
 		src/auth.h \
 		src/functions.h \
-		src/young.h \
 		src/info.h \
 		src/drcom.h \
 		src/tracelog.h \
@@ -320,7 +318,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tracelog.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/young.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -377,20 +374,6 @@ functions.obj: src/functions.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/functions.c' object='functions.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o functions.obj `if test -f 'src/functions.c'; then $(CYGPATH_W) 'src/functions.c'; else $(CYGPATH_W) '$(srcdir)/src/functions.c'; fi`
-
-young.o: src/young.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT young.o -MD -MP -MF $(DEPDIR)/young.Tpo -c -o young.o `test -f 'src/young.c' || echo '$(srcdir)/'`src/young.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/young.Tpo $(DEPDIR)/young.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/young.c' object='young.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o young.o `test -f 'src/young.c' || echo '$(srcdir)/'`src/young.c
-
-young.obj: src/young.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT young.obj -MD -MP -MF $(DEPDIR)/young.Tpo -c -o young.obj `if test -f 'src/young.c'; then $(CYGPATH_W) 'src/young.c'; else $(CYGPATH_W) '$(srcdir)/src/young.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/young.Tpo $(DEPDIR)/young.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/young.c' object='young.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o young.obj `if test -f 'src/young.c'; then $(CYGPATH_W) 'src/young.c'; else $(CYGPATH_W) '$(srcdir)/src/young.c'; fi`
 
 info.o: src/info.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT info.o -MD -MP -MF $(DEPDIR)/info.Tpo -c -o info.o `test -f 'src/info.c' || echo '$(srcdir)/'`src/info.c

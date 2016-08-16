@@ -6,8 +6,7 @@
 #include "info.h"
 
 const static int LOGOFF = 0; // 下线标志位
-const static int YOUNG_CLIENT = 1; // 翼起来客户端标志位
-const static int DRCOM_CLIENT = 2; // Drcom客户端标志位
+const static int DRCOM_CLIENT = 1; // Drcom客户端标志位
 
 void init(int argc, char *argv[], int client)
 {
@@ -17,7 +16,7 @@ void init(int argc, char *argv[], int client)
 		return;
 	}
 	int index = 0;
-	if(client != YOUNG_CLIENT)
+	if(client != DRCOM_CLIENT)
 	{
 		index = 1;
 	}
@@ -56,27 +55,16 @@ int main(int argc, char *argv[])
 	}
 
 	/* 检查命令行参数格式 */
-	if (argc<2 || argc>5) {
+	if (argc<2 || argc>4) {
 		printf("Command is Illegal ,You can input command like this:\n");
 		printf("    %s logoff\n", argv[0]);
 		printf("    %s username\n", argv[0]);
 		printf("    %s username password \n", argv[0]);
 		printf("    %s username password Interface_Of_Wan\n", argv[0]);
-		printf("    %s drcom username\n", argv[0]);
-		printf("    %s drcom username password \n", argv[0]);
-		printf("    %s drcom username password Interface_Of_Wan\n", argv[0]);
 		exit(-1);
 	} 
 
-	if(*argv[1]!='d'|| *argv[1]!='D')
-	{
-		client = YOUNG_CLIENT;
-	}
-
-	if( *argv[1]=='d' || *argv[1]=='D')
-	{
-		client = DRCOM_CLIENT;
-	}
+	client = DRCOM_CLIENT;
 	
 	if( *argv[1]=='l' || *argv[1]=='L')
 	{

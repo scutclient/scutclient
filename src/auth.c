@@ -1,16 +1,11 @@
-/* File: auth.c
- * ------------
- * 注：核心函数为Authentication()，由该函数执行801.1X认证
- */
-
 #include "auth.h"
 #include "tracelog.h"
 #include "info.h"
 
 #define LOGOFF  0 // 下线标志位
-#define YOUNG_CLIENT  1 // 翼起来客户端标志位
-#define DRCOM_CLIENT  2 // Drcom客户端标志位
-#define DRCOM_UDP_HEARTBEAT_DELAY  10 // Drcom客户端心跳延时秒数，默认10秒
+#define DRCOM_CLIENT  1 // Drcom客户端标志位
+
+#define DRCOM_UDP_HEARTBEAT_DELAY  30 // Drcom客户端心跳延时秒数，默认30秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
 #define AUTH_8021X_RECV_DELAY  1 // 客户端收8021x报文延时秒数，默认1秒
 #define AUTH_8021X_RECV_TIMES  10 // 客户端收8021x报文重试次数
@@ -22,27 +17,27 @@ const static uint8_t UnicastAddr[6] = {0x01,0xd0,0xf8,0x00,0x00,0x03}; // 单播
 /* 静态常量*/
 
 /* 静态变量*/
-static uint8_t Packet[1024]={0};
-static int resev=0;
-static int times=AUTH_8021X_RECV_TIMES;
-static int success_8021x=0;
+static uint8_t send_8021x_data[1024]={0}; // 用于存放发送8021x报文的变量
+static size_t send_8021x_data_len = 0; // 用于存放发送8021x报文的变量的长度
+static int send_udp_data_len = 0; // 用于存放发送udp报文的变量的长度
+static int resev=0; // 是否收到了第一帧报文的标志位，第一帧报文用于拿到服务器的mac
+static int times=AUTH_8021X_RECV_TIMES; // 8021x断链重试次数
+static int success_8021x=0; // 8021x成功登录标志位
+static int isDrcom=0;  // 是否处于Drcom认证处理阶段
 static uint8_t EthHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x88,0x8e};
 static uint8_t BroadcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0x88,0x8e};
 static uint8_t MultcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x80,0xc2,0x00,0x00,0x03,0x88,0x8e};
 static uint8_t UnicastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x01,0xd0,0xf8,0x00,0x00,0x03,0x88,0x8e};
-static size_t packetlen = 0;
-static int clientHandler = 0;
+static int clientHandler = 0; // 判定不同客户端处理的标志位
 static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
-static time_t WaitUdpRecvTime = 0;  // UDP报文等待时间
-static time_t Wait8021xRecvTime = 0;  // 8021x报文等待时间
-static int auth_8021x_sock = 0;
-static int auth_udp_sock = 0;
+static int auth_8021x_sock = 0; // 8021x的socket描述符
+static int auth_udp_sock = 0; // udp的socket描述符
 /* 静态变量*/
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
 typedef uint8_t EAP_ID;
-
+struct sockaddr_in serv_addr,local_addr;
 // 子函数声明
 void auth_8021x_Handler(uint8_t recv_data[]);
 size_t appendStartPkt(uint8_t header[]);
@@ -83,12 +78,12 @@ int checkWanStatus(int sock)
 	bzero(&auth_8021x_addr,sizeof(auth_8021x_addr));
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
-	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
+	auth_8021x_addr.sll_protocol  = htons(ETH_P_ALL);
 	auth_8021x_addr.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST | PACKET_OTHERHOST | PACKET_OUTGOING;
 	return 1;
 }
 
-int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int send_data_len)
+int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 {
 	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len) 
 	{ 
@@ -97,11 +92,11 @@ int auth_UDP_Sender(struct sockaddr_in serv_addr, unsigned char *send_data, int 
 		perror("auth_UDP_Sender error");
 		return 0;
 	}
-	LogWrite(INF,"%s%d","auth_UDP_Sender packetlen = ",packetlen);
+	LogWrite(INF,"%s%d","auth_UDP_Sender send_data_len = ",send_data_len);
 	return 1;
 }
 
-int auth_UDP_Receiver(char *recv_data, int recv_len)
+int auth_UDP_Receiver(char *recv_data)
 {
 	if(recv(auth_udp_sock, recv_data, ETH_FRAME_LEN, 0) < 0)
 	{ 
@@ -111,7 +106,7 @@ int auth_UDP_Receiver(char *recv_data, int recv_len)
 	return 1;
 }
 
-int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
+int auth_8021x_Sender(unsigned char *send_data,int send_data_len)
 {
 	if (sendto(auth_8021x_sock, send_data, send_data_len, 0, (struct sockaddr *)&auth_8021x_addr,  sizeof(auth_8021x_addr)) != send_data_len) 
 	{ 
@@ -120,7 +115,7 @@ int auth_8021x_Sender(unsigned char *send_data, int send_data_len)
 		perror("auth_8021x_Sender failed.");
 		return 0;
 	}
-	LogWrite(INF,"%s%d","auth_8021x_Sender packetlen = ",packetlen);
+	LogWrite(INF,"%s%d","auth_8021x_Sender send_8021x_data_len = ",send_8021x_data_len);
 	return 1;
 }
 
@@ -136,78 +131,35 @@ int auth_8021x_Receiver(char *recv_data)
 
 size_t appendStartPkt(uint8_t header[])
 {
-	 if(clientHandler == YOUNG_CLIENT)
-	 {
-		return AppendYoungStartPkt( header, Packet );
-	 }
-	 else if (clientHandler == DRCOM_CLIENT)
-	 {
-		return AppendDrcomStartPkt( header, Packet );
-	 }
+	return AppendDrcomStartPkt( header, send_8021x_data );
 }
 
 size_t appendResponseIdentity(const uint8_t request[])
 {
-	 if(clientHandler == YOUNG_CLIENT)
-	 {
-		unsigned char ipaddress[16] = {0};
-		GetWanIpAddressFromDevice(ipaddress);
-		unsigned char username[32] = {0};
-		GetUserName(username);
-		return AppendYoungResponseIdentity(request, EthHeader, ipaddress, username, Packet);
-	 }
-	 else if (clientHandler == DRCOM_CLIENT)
-	 {
-		unsigned char username[32] = {0};
-		GetUserName(username);
-		return AppendDrcomResponseIdentity(request, EthHeader, username, Packet);
-	 }
+	unsigned char username[32] = {0};
+	GetUserName(username);
+	return AppendDrcomResponseIdentity(request, EthHeader, username, send_8021x_data);
 }
 
 size_t appendResponseMD5(const uint8_t request[])
 {
-	if(clientHandler == YOUNG_CLIENT)
-	{
-		unsigned char ipaddress[16] = {0};
-		GetWanIpAddressFromDevice(ipaddress);
-		unsigned char username[32] = {0};
-		GetUserName(username);
-		unsigned char password[32] = {0};
-		GetPassword(password);
-		return AppendYoungResponseMD5(request, EthHeader, ipaddress, username, password, Packet);
-	}
-	else if (clientHandler == DRCOM_CLIENT)
-	{
-		unsigned char username[32] = {0};
-		GetUserName(username);
-		unsigned char password[32] = {0};
-		GetPassword(password);
-		return AppendDrcomResponseMD5(request, EthHeader, username, password, Packet);
-	}
+	unsigned char username[32] = {0};
+	GetUserName(username);
+	unsigned char password[32] = {0};
+	GetPassword(password);
+	return AppendDrcomResponseMD5(request, EthHeader, username, password, send_8021x_data);
 }
 
 void sendLogoffPkt()
 {
 	LogWrite(INF,"%s","Send LOGOFF.");
 	// 连发三次，确保已经下线
-	if(clientHandler == YOUNG_CLIENT)
-	{
-		packetlen = AppendYoungLogoffPkt(EthHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-		packetlen = AppendYoungLogoffPkt(MultcastHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-		packetlen = AppendYoungLogoffPkt(BroadcastHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-	}
-	else if (clientHandler == DRCOM_CLIENT)
-	{
-		packetlen = AppendDrcomLogoffPkt(EthHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-		packetlen = AppendDrcomLogoffPkt(MultcastHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-		packetlen = AppendDrcomLogoffPkt(BroadcastHeader, Packet);
-		auth_8021x_Sender(Packet, packetlen);
-	}
+	send_8021x_data_len = AppendDrcomLogoffPkt(EthHeader, send_8021x_data);
+	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
+	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+	send_8021x_data_len = AppendDrcomLogoffPkt(BroadcastHeader, send_8021x_data);
+	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
 int set_unblock(int fd, int flags)
@@ -271,20 +223,18 @@ void initAuthenticationInfo()
 void loginToGetServerMAC(uint8_t recv_data[])
 {
 	fd_set fdR;
-	
+	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
 	//先发一次
-	packetlen = appendStartPkt(MultcastHeader);
-	auth_8021x_Sender(Packet, packetlen);
+	send_8021x_data_len = appendStartPkt(MultcastHeader);
+	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	LogWrite(INF,"%s","Client: Multcast Start.");
 	times = AUTH_8021X_RECV_TIMES;
-	// 记下基线时间
-	Wait8021xRecvTime = time(NULL);
 	while(resev ==0)
 	{
 		FD_ZERO(&fdR); 
 		FD_SET(auth_8021x_sock, &fdR); 
 		FD_SET(auth_udp_sock, &fdR); 
-		switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
+		switch (select(auth_8021x_sock+1, &fdR, NULL, NULL, &timeout)) 
 		{ 
 			case -1: 
 				LogWrite(ERROR,"%s","select socket failed.");
@@ -309,8 +259,6 @@ void loginToGetServerMAC(uint8_t recv_data[])
 						// 初始化服务器MAC地址
 						memcpy(EthHeader, recv_data+6,6);
 						auth_8021x_Handler(recv_data);
-						// 发送
-						auth_8021x_Sender(Packet, packetlen);
 						return;
 					}
 				}
@@ -325,44 +273,40 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			exit(EXIT_FAILURE);
 		}
 			perror("debug");
-		// 当前时间减去基线时间大于设定值的时候再发送
-		if(time(NULL) - Wait8021xRecvTime > AUTH_8021X_RECV_DELAY)
+
+		times--;
+		// 当之前广播的时候，设置为多播
+		if(send_8021x_data[1] == 0xff)
 		{
-		
-			// 记下基线时间，重新记时
-			Wait8021xRecvTime = time(NULL);
-			times--;
-			// 当之前广播的时候，设置为多播
-			if(Packet[1] == 0xff)
-			{
-				packetlen = appendStartPkt(MultcastHeader);
-				auth_8021x_Sender(Packet, packetlen);
-				LogWrite(INF,"%s","Client: Multcast Start.");
-			}
-			// 当之前多播的时候，设置为单播
-			else if(Packet[1] == 0x80)
-			{
-				packetlen = appendStartPkt(UnicastHeader);
-				auth_8021x_Sender(Packet, packetlen);
-				LogWrite(INF,"%s","Client: Unicast Start.");
-			}
-			// 当之前单播的时候，设置为广播
-			else if(Packet[1] == 0xd0)
-			{
-				packetlen = appendStartPkt(BroadcastHeader);
-				auth_8021x_Sender(Packet, packetlen);
-				LogWrite(INF,"%s","Client: Broadcast Start.");
-			}
+			send_8021x_data_len = appendStartPkt(MultcastHeader);
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			LogWrite(INF,"%s","Client: Multcast Start.");
 		}
+		// 当之前多播的时候，设置为单播
+		else if(send_8021x_data[1] == 0x80)
+		{
+			send_8021x_data_len = appendStartPkt(UnicastHeader);
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			LogWrite(INF,"%s","Client: Unicast Start.");
+		}
+		// 当之前单播的时候，设置为广播
+		else if(send_8021x_data[1] == 0xd0)
+		{
+			send_8021x_data_len = appendStartPkt(BroadcastHeader);
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			LogWrite(INF,"%s","Client: Broadcast Start.");
+		}
+		
 	}
 }
 
 int Authentication(int client)
 {	
+	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
 	int on = 1;
 	fd_set fdR;
 	clientHandler = client;
-	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	
 	if((setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)  
 	{  
@@ -394,235 +338,159 @@ int Authentication(int client)
 		sendLogoffPkt();
 		return 0;
 	}
-	if(clientHandler==YOUNG_CLIENT)
-	{
-		LogWrite(INF,"%s","SCUTclient Mode.");
-		
-		InitCheckSumForYoung();
-		
-		loginToGetServerMAC(recv_8021x_buf);
 
-		while(resev)
-		{
-			FD_ZERO(&fdR); 
-			FD_SET(auth_8021x_sock, &fdR); 
-			FD_SET(auth_udp_sock, &fdR); 
-			switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
-			{ 
-				case -1: 
-					LogWrite(ERROR,"%s","select socket failed.");
-					perror("select socket failed.");
-				break;
-				case 0: 
-				break;
-				default: 
-					if (FD_ISSET(auth_8021x_sock,&fdR)) 
-					{ 
-						if(auth_8021x_Receiver(recv_8021x_buf))
+	LogWrite(INF,"%s","Drcom Mode.");
+
+	unsigned char send_data[ETH_FRAME_LEN] = {0};
+	char recv_data[ETH_FRAME_LEN] = {0};
+	int recv_data_len = 0;
+
+	
+	//静态全局变量auth_udp_sock
+	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (auth_udp_sock < 0) 
+	{
+		//auth_udp_sock<0即错误
+		LogWrite(ERROR,"%s","Create auth_udp_sock failed.");
+		perror("Create auth_udp_sock failed.");
+		exit(EXIT_FAILURE);
+	}
+	// 非阻塞
+	if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
+	{
+		LogWrite(ERROR,"%s","set unblock failed.");
+		perror("set unblock failed.");
+	}
+	
+	bzero(&serv_addr,sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	unsigned char server_ip[16]= {0};
+	GetUdpServerIpAddressFromDevice(server_ip);
+	serv_addr.sin_addr.s_addr = inet_addr(server_ip);
+	serv_addr.sin_port = htons(SERVER_PORT);
+
+	bzero(&local_addr,sizeof(local_addr));
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	local_addr.sin_port = htons(SERVER_PORT);
+
+	bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr));
+	
+	loginToGetServerMAC(recv_8021x_buf);
+	// 计时心跳时间
+	BaseHeartbeatTime = time(NULL);
+	while(resev)
+	{
+		FD_ZERO(&fdR); 
+		FD_SET(auth_8021x_sock, &fdR); 
+		FD_SET(auth_udp_sock, &fdR);
+		switch (select(auth_8021x_sock + auth_udp_sock + 1, &fdR, NULL, NULL, &timeout)) 
+		{ 
+			case -1: 
+				LogWrite(ERROR,"%s","select socket failed.");
+				perror("select socket failed.");
+			break;
+			case 0:
+			break;
+			default: 
+				if (FD_ISSET(auth_8021x_sock,&fdR)) 
+				{
+					if(auth_8021x_Receiver(recv_8021x_buf))
+					{
+						// 过滤掉非0x888e的报文
+						if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
 						{
-							// 过滤掉非0x888e的报文
-							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
+							auth_8021x_Handler(recv_8021x_buf);
+							if(success_8021x == 2)
 							{
-								auth_8021x_Handler(recv_8021x_buf);
-								// 发送
-								auth_8021x_Sender(Packet, packetlen);
+								// 发送Drcom开始认证后置回1
+								success_8021x = 1;
+								send_udp_data_len = Drcom_MISC_START_ALIVE_Setter(send_data,recv_data);
+								auth_UDP_Sender(send_data, send_udp_data_len);
 							}
 						}
 					}
-				break;
-			}
-		}
-	}
-
-	if(clientHandler==DRCOM_CLIENT)
-	{
-		LogWrite(INF,"%s","Drcom Mode.");
-
-		unsigned char send_data[ETH_FRAME_LEN] = {0};
-		int send_data_len = 0;
-		char recv_data[ETH_FRAME_LEN] = {0};
-		int recv_data_len = 0;
-		struct sockaddr_in serv_addr,local_addr;
-		
-		//静态全局变量auth_udp_sock
-		auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-		if (auth_udp_sock < 0) 
-		{
-			//auth_udp_sock<0即错误
-			LogWrite(ERROR,"%s","Create auth_udp_sock failed.");
-			perror("Create auth_udp_sock failed.");
-			exit(EXIT_FAILURE);
-		}
-		// 非阻塞
-		if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
-		{
-			LogWrite(ERROR,"%s","set unblock failed.");
-			perror("set unblock failed.");
-		}
-		
-		bzero(&serv_addr,sizeof(serv_addr));
-		serv_addr.sin_family = AF_INET;
-		unsigned char server_ip[16]= {0};
-		GetUdpServerIpAddressFromDevice(server_ip);
-		serv_addr.sin_addr.s_addr = inet_addr(server_ip);
-		serv_addr.sin_port = htons(SERVER_PORT);
-
-		bzero(&local_addr,sizeof(local_addr));
-		local_addr.sin_family = AF_INET;
-		local_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-		local_addr.sin_port = htons(SERVER_PORT);
-		
-		if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)  
-		{  
-			perror("setsockopt failed");  
-			exit(EXIT_FAILURE);  
-		}  
-		
-		bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(struct sockaddr_in));
-		
-		loginToGetServerMAC(recv_8021x_buf);
-		
-		int isHasSend = 0;
-		send_data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
-		while(resev)
-		{
-			FD_ZERO(&fdR); 
-			FD_SET(auth_8021x_sock, &fdR); 
-			FD_SET(auth_udp_sock, &fdR);
-			switch (select(auth_8021x_sock + auth_udp_sock, &fdR, NULL, NULL, NULL)) 
-			{ 
-				case -1: 
-					LogWrite(ERROR,"%s","select socket failed.");
-					perror("select socket failed.");
-				break;
-				case 0:
-				break;
-				default: 
-					if (FD_ISSET(auth_8021x_sock,&fdR)) 
-					{ 
-						if(auth_8021x_Receiver(recv_8021x_buf))
+				} 
+				if (FD_ISSET(auth_udp_sock,&fdR)) 
+				{
+					if(auth_UDP_Receiver(recv_data))
+					{
+						// 过滤掉非drcom的报文
+						if(recv_data[0]!=0x07)
 						{
-							// 过滤掉非0x888e的报文
-							if(recv_8021x_buf[12]==0x88 && recv_8021x_buf[13]==0x8e)
-							{
-								auth_8021x_Handler(recv_8021x_buf);
-								// 发送
-								auth_8021x_Sender(Packet, packetlen);
-							}
+							continue;
+						}
+											PrintDebugInfo("recv_data", recv_data, 256);
+
+						send_udp_data_len = Drcom_UDP_Handler(send_data, recv_data);
+
+						if(success_8021x)
+						{
+							auth_UDP_Sender(send_data, send_udp_data_len);
 						}
 					} 
-					else if (FD_ISSET(auth_udp_sock,&fdR)) 
-					{
-						if(auth_UDP_Receiver(recv_data, recv_data_len))
-						{
-							// 过滤掉非drcom的报文
-							if(recv_data[0]!=0x07)
-							{
-								continue;
-							}
-							send_data_len = Drcom_UDP_Handler(send_data, recv_data);
-							auth_UDP_Sender(serv_addr, send_data, send_data_len);
-							// 收取后记下心跳的基线时间，开始记时
-							BaseHeartbeatTime = time(NULL);
-							isHasSend = 0;
-						} 
-					}
-	
-			}
-			// 如果8021x协议认证成功并且心跳时间间隔大于设定值,则发送一次心跳
-			if(success_8021x && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
-			{
-				if(isHasSend == 0)
-				{
-					send_data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
-					auth_UDP_Sender(serv_addr, send_data, send_data_len);
-					// 发送后记下基线时间，开始记时
-					WaitUdpRecvTime = time(NULL);
-					isHasSend = 1;
 				}
-				// 当前时间减去基线时间大于设定值的时候再自加
-				if(time(NULL) - WaitUdpRecvTime > DRCOM_UDP_RECV_DELAY)
-				{
-					// 设定的DRCOM_UDP_RECV_DELAY时间到，需要发送
-					isHasSend = 0;
-				}
-			}		
+			break;
 		}
-		close(auth_udp_sock);
+		// 如果8021x协议认证成功并且心跳时间间隔大于设定值,则发送一次心跳
+		if(success_8021x && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
+		{
+			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
+			auth_UDP_Sender(send_data, send_udp_data_len);
+			// 发送后记下基线时间，开始重新计时心跳时间
+			BaseHeartbeatTime = time(NULL);
+		}	
+		
 	}
+	close(auth_udp_sock);
+	
 	sendLogoffPkt(auth_8021x_sock);
 	close(auth_8021x_sock);
 	return 1;
 }
 
-typedef enum {MISC_0800=0x08, ALIVE_FILE=0x10, MISC_3000=0x30, MISC_2800=0x28} DRCOM_Type;
-typedef enum {ALIVE_TYPE=0x00, FILE_TYPE=0x01} DRCOM_ALIVE_FILE_Type;
-typedef enum {ALIVE_LOGIN_TYPE=0x02, ALIVE_HEARTBEAT_TYPE=0x06} DRCOM_ALIVE_Type;
-typedef enum {MISC_2800_01_TYPE=0x01, MISC_2800_02_TYPE=0x02, MISC_2800_03_TYPE=0x03, MISC_2800_04_TYPE=0x04} DRCOM_MISC_2800_Type;
+typedef enum {MISC_START_ALIVE=0x01, MISC_RESPONSE_FOR_ALIVE=0x02, MISC_INFO=0x03, MISC_RESPONSE_INFO=0x04, MISC_HEART_BEAT=0x0b, MISC_RESPONSE_HEART_BEAT=0x06} DRCOM_Type;
+typedef enum {MISC_HEART_BEAT_01_TYPE=0x01, MISC_HEART_BEAT_02_TYPE=0x02, MISC_HEART_BEAT_03_TYPE=0x03, MISC_HEART_BEAT_04_TYPE=0x04} DRCOM_MISC_HEART_BEAT_Type;
 int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 {
 	int data_len = 0;
 	// 根据收到的recv_data，填充相应的send_data
 	if (recv_data[0] == 0x07)
 	{
-		switch ((DRCOM_Type)recv_data[2])
+		switch ((DRCOM_Type)recv_data[4])
 		{
-			case ALIVE_FILE:
-				switch ((DRCOM_ALIVE_FILE_Type)recv_data[3])
-				{
-					case ALIVE_TYPE:
-						switch ((DRCOM_ALIVE_Type)recv_data[4])
-						{
-							case ALIVE_LOGIN_TYPE:
-								data_len = Drcom_ALIVE_LOGIN_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"%s%d%s%d","[ALIVE_LOGIN_TYPE] UDP_Server: Request (type:",recv_data[4],")!Response ALIVE_LOGIN_TYPE data len=",data_len);
-							break;
-							case ALIVE_HEARTBEAT_TYPE:
-								data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-								LogWrite(INF,"%s%d%s%d","[ALIVE_HEARTBEAT_TYPE] UDP_Server: Request (type:",recv_data[4],")!Response MISC_2800_01_TYPE data len=",data_len);
-							break;
-							default:
-								LogWrite(ERROR,"%s%d%s","[DRCOM_ALIVE_Type] UDP_Server: Request (type:", recv_data[4],")!Error! Unexpected request type!Restart Login...");
-								data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
-							break;
-						}
-					break;
-					case FILE_TYPE:
-						data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"%s%d%s%d","[FILE_TYPE] UDP_Server: Request (type:",recv_data[3],")!Response MISC_2800_01_TYPE data len=",data_len);
-					break;
-					default:
-						LogWrite(ERROR,"%s%d%s","[DRCOM_ALIVE_FILE_Type] UDP_Server: Request (type:", recv_data[3],")!Error! Unexpected request type!Restart Login...");
-						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
-					break;
-				}
+			case MISC_RESPONSE_FOR_ALIVE:
+				data_len = Drcom_MISC_INFO_Setter(send_data,recv_data);
+				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_FOR_ALIVE (step:0x",recv_data[4],")!Send MISC_INFO, data len = ",data_len);
 			break;
-			case MISC_3000:
-				data_len = Drcom_MISC_2800_01_TYPE_Setter(send_data,recv_data);
-				LogWrite(INF,"%s%d%s%d","[MISC_3000] UDP_Server: Request (type:",recv_data[2],")!Response MISC_2800_01_TYPE data len=",data_len);
+			case MISC_RESPONSE_INFO:
+				data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_data,recv_data);
+				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_INFO (step:0x",recv_data[4],")!Send MISC_HEART_BEAT_01, data len = ",data_len);
 			break;
-			case MISC_2800:
-				switch ((DRCOM_MISC_2800_Type)recv_data[5])
+			case MISC_HEART_BEAT:
+				switch ((DRCOM_MISC_HEART_BEAT_Type)recv_data[5])
 				{
-					case MISC_2800_02_TYPE:
-						data_len = Drcom_MISC_2800_03_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"%s%d%s%d","[MISC_2800_02_TYPE] UDP_Server: Request (type:",recv_data[5],")!Response MISC_2800_03_TYPE data len=",data_len);
+					case MISC_HEART_BEAT_02_TYPE:
+						data_len = Drcom_MISC_HEART_BEAT_03_TYPE_Setter(send_data,recv_data);
+						LogWrite(INF,"%s%x%s%d"," UDP_Server: Request MISC_HEART_BEAT_03 (type:0x",recv_data[5],")!Response MISC_HEART_BEAT_03_TYPE data len=",data_len);
 					break;
-					case MISC_2800_04_TYPE: 
+					case MISC_HEART_BEAT_04_TYPE: 
 					// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 						BaseHeartbeatTime = time(NULL);
 						data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_data,recv_data);
-						LogWrite(INF,"%s%d%s%d","[MISC_2800_04_TYPE] UDP_Server: Request (type:",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
+						LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
 					break;
 					default:
-						LogWrite(ERROR,"%s%d%s","[DRCOM_MISC_2800_Type] UDP_Server: Request (type:", recv_data[5],")!Error! Unexpected request type!Restart Login...");
-						data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
+						LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")!Error! Unexpected request type!Restart Login...");
 					break;
 				}
 			break;
+			case MISC_RESPONSE_HEART_BEAT:
+				data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_data,recv_data);
+				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_HEART_BEAT (step:0x",recv_data[4],")!Send MISC_HEART_BEAT_01, data len = ",data_len);
+			break;
 			default:
-				LogWrite(ERROR,"%s%d%s","[DRCOM_Type] UDP_Server: Request (type:", recv_data[2],")!Error! Unexpected request type!Restart Login...");
-				data_len = Drcom_LOGIN_TYPE_Setter(send_data,recv_data);
+				LogWrite(ERROR,"%s%x%s","[DRCOM_Type] UDP_Server: Request (type:0x", recv_data[2],")!Error! Unexpected request type!Restart Login...");
 			break;
 		}
 	}
@@ -632,23 +500,24 @@ int Drcom_UDP_Handler(unsigned char *send_data, char *recv_data)
 void auth_8021x_Handler(uint8_t recv_data[])
 {
 	// 根据收到的Request，回复相应的Response包
+	
 	if ((EAP_Code)recv_data[18] == REQUEST)
 	{
 		switch ((EAP_Type)recv_data[22])
 		{
 			case IDENTITY:
-				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Server: Request Identity!");
-				packetlen = appendResponseIdentity(recv_data);
-				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Client: Response Identity.");
+				LogWrite(INF,"%s", "Server: Request Identity!");
+				send_8021x_data_len = appendResponseIdentity(recv_data);
+				LogWrite(INF,"%s%d", "Client: Response Identity. send_8021x_data_len = ", send_8021x_data_len);
 				break;
 			case MD5:
-				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Server: Request MD5-Challenge!");
-				packetlen = appendResponseMD5(recv_data);
-				LogWrite(INF,"[%d] %s", (EAP_ID)recv_data[19],"Client: Response MD5-Challenge.");
+				LogWrite(INF,"%s", "Server: Request MD5-Challenge!");
+				send_8021x_data_len = appendResponseMD5(recv_data);
+				LogWrite(INF,"%s%d", "Client: Response MD5-Challenge. send_8021x_data_len = ", send_8021x_data_len);
 				break;
 			default:
-				LogWrite(INF,"[%d] %s%d%s",(EAP_ID)recv_data[19],"Server: Request (type:",(EAP_Type)recv_data[22],")!Error! Unexpected request type!");
-				LogWrite(INF,"%s", "#scutclient Exit#");
+				LogWrite(ERROR,"%s%x%s","Server: Request (type:0x",(EAP_Type)recv_data[22],")!Error! Unexpected request type!");
+				LogWrite(ERROR,"%s", "#scutclient Exit#");
 				exit(EXIT_FAILURE);
 				break;
 		}
@@ -658,33 +527,35 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		// 处理认证失败信息
 		success_8021x = 0;
 		uint8_t errtype = recv_data[22];
-		uint8_t msgsize = recv_data[23];
-		uint8_t infocode[2] = {recv_data[28],recv_data[29]};
-		LogWrite(ERROR,"[%d] %s",(EAP_ID)recv_data[19],"Server: Failure.");
-		if (times>0)
-		{
-			times--;
-			sleep(1);
-			/* 主动发起认证会话 */
-			packetlen = appendStartPkt(EthHeader);
-			LogWrite(INF,"%s","Client: Restart.");
-			auth_8021x_Sender(Packet, packetlen);
-			return ;
-		}
-		else
-		{
-			LogWrite(INF,"%s","Reconnection failed.");
-			exit(EXIT_FAILURE);
-		}
-		LogWrite(INF,"%s%x","errtype=0x", errtype);
+		LogWrite(ERROR,"%s","Server: Failure.");
+		// if (times>0)
+		// {
+			// times--;
+			// sleep(1);
+			// /* 主动发起认证会话 */
+			// send_8021x_data_len = appendStartPkt(EthHeader);
+			// LogWrite(INF,"%s","Client: Restart.");
+			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			// return ;
+		// }
+		// else
+		// {
+			// LogWrite(INF,"%s","Reconnection failed.");
+			// exit(EXIT_FAILURE);
+		// }
+		LogWrite(ERROR,"%s%x","Server: errtype=0x", errtype);
 		exit(EXIT_FAILURE);
 	}
 	else if ((EAP_Code)recv_data[18] == SUCCESS)
 	{
-		LogWrite(INF,"[%d] %s", recv_data[19],"Server: Success.");
+		LogWrite(INF,"%s", "Server: Success.");
 		times=AUTH_8021X_RECV_TIMES;
-		success_8021x = 1;
+		// 等于2说明需要发送Drcom开始认证包
+		success_8021x = 2;
+		
 		return;
 	}
+	// 发送
+	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	return ;
 }
