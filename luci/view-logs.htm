@@ -1,0 +1,11 @@
+<%+header%>
+<h2><a id="content" name="content">scutclient日志</a></h2>
+<div class="cbi-map-descr"></div>
+<h3>配置文件下载</h3>
+<a href="<%="/"..nixio.fs.basename(dirname)..".tar"%>">配置打包下载</a><br />
+<h3>scutclient日志</h3>
+<p>以下为<%=logfile%>内容</p>
+<div id="content_logs">
+<textarea readonly="readonly" wrap="off" style="width: 100%" rows="20" id="logs"><%=logs:pcdata()%></textarea>
+</div>
+<%+footer%>

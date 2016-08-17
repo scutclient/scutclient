@@ -1,0 +1,79 @@
+<%
+-- LuCI by libc0607 (libc0607@gmail.com)
+-- 华工路由群：262939451
+
+function get_wan_port()
+	-- 啊..应该用uci库的不过没区别
+	return  string.sub(luci.sys.exec("ifstatus wan|grep \\\"device\\\"|awk {'print $2'}"), 2, -4)
+end
+
+ 
+function get_client_version(pkg_name)
+	-- 这个可能不准确 openwrt bb/cc上没问题
+	return string.find(luci.sys.exec("opkg list-installed"), pkg_name)
+		and luci.sys.exec("opkg list-installed|grep "..pkg_name.."|grep -v luci|awk '{print $3}'")
+		or  nil
+end
+
+
+function get_client_status(exec_name)
+	return luci.sys.call("pidof "..exec_name.." >/dev/null")
+		and translate("没有运行")
+		or  translate("正在运行")
+end
+
+
+-- Wi-Fi
+
+if string.sub(luci.sys.exec("wifi status|grep up|head -n 1|awk {'print $2'}"), 1, 4) == "true" then
+	ssid = "Wi-Fi SSID："..luci.sys.exec("uci get wireless.@wifi-iface[0].ssid")
+else
+	ssid = "Wi-Fi 未开启"
+end
+
+-- 这里好乱啊但是不想改
+if string.sub(luci.sys.exec("uci get network.wan.proto"), 1, 6) ~= "static" then
+	wanip = "WAN口不是静态地址"
+else
+	wanip = "<p>IP地址/子网掩码/网关："..luci.sys.exec("uci get network.wan.ipaddr").."/"
+	  ..luci.sys.exec("uci get network.wan.netmask").."/"
+	  ..luci.sys.exec("uci get network.wan.gateway").."</p>"
+	  .."<p>DNS:      "..luci.sys.exec("uci get network.wan.dns").."</p>"
+	  .."<p>MAC:      "..luci.sys.exec("uci get network.wan.macaddr").."</p>"
+end
+
+-- 客户端信息
+client_version = get_client_version("scutclient")
+	and translate("已安装版本：")..get_client_version("scutclient")
+	or translate("scutclient未安装")
+
+-- 重拨/下线
+logoff = luci.dispatcher.build_url("admin/services/scutclient/status").."?logoff=1"
+redial = luci.dispatcher.build_url("admin/services/scutclient/status").."?redial=1"
+scut_status = translate("scutclient ")..get_client_status("scutclient")
+
+%>
+
+<%+header%>
+<h2><a id="content" name="content">scutclient状态</a></h2>
+<div class="cbi-map-descr"></div>
+<h3>状态：</h3>
+<p><%=scut_status%></p>
+<p><%=ssid%></p>
+<p>WAN口：<%=get_wan_port()%>, <%=wanstatus%></p>
+<%=wanip%>
+<h3>scutclient设置：</h3>
+<a href="<%=logoff%>">下线</a><br />
+<a href="<%=redial%>">重拨</a><br />
+<p><%=client_version%></p>
+<p>开机启动：  <%=luci.sys.exec("uci get scutclient.@option[0].enable")%></p>
+<p>拨号接口:   <%=luci.sys.exec("uci get scutclient.@scutclient[0].interface")%></p>
+<p>账号：      <%=luci.sys.exec("uci get scutclient.@scutclient[0].username")%></p>
+<p>密码：      <%=luci.sys.exec("uci get scutclient.@scutclient[0].password")%></p>
+<p>认证模式：  <%=luci.sys.exec("uci get scutclient.@option[0].client")%></p>
+<p>主机名：    <%=luci.sys.exec("uci get scutclient.@drcom[0].hostname")%></p>
+<p>Drcom版本： <%=luci.sys.exec("uci get scutclient.@drcom[0].version")%></p>
+<p>Hash：      <%=luci.sys.exec("uci get scutclient.@drcom[0].hash")%></p>
+<p>服务器IP：  <%=luci.sys.exec("uci get scutclient.@drcom[0].server_auth_ip")%></p>
+
+<%+footer%>
