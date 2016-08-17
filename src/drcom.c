@@ -275,18 +275,18 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	memcpy(send_data+packetlen, version, len);
 	packetlen += 64;
 	
-	// 先填充65位0x00 (在这64位里面填充HASH信息，预留一位奇数位)
-	memset(send_data+packetlen,0x00,64);
+	// 先填充68位0x00 (在这64位里面填充HASH信息，预留需要补0的四位)
+	memset(send_data+packetlen,0x00,68);
 	// 填充HASH信息
 	unsigned char hash[64] = {0};
 	GetHashFromDevice(hash);
 	memcpy(send_data+packetlen, hash, strlen(hash));
 	packetlen += 64;
-	//判定是否是奇数
-	if(packetlen % 2 == 1)
+	//判定是否是4的倍数
+	if(packetlen % 4 != 0)
 	{
-		//补0，使包长度为偶数
-		packetlen += 1;
+		//补0，使包长度为4的倍数
+		packetlen = packetlen + 4 - ( packetlen % 4 );
 	}
 	// 回填包的长度
 	send_data[2]= 0xFF & packetlen;
