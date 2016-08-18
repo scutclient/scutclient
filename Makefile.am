@@ -5,7 +5,6 @@ scutclient_SOURCES=\
 		src/main.c \
 		src/auth.c \
 		src/functions.c \
-		src/young.c \
 		src/info.c \	
 		src/drcom.c \
 		src/tracelog.c \
@@ -13,7 +12,6 @@ scutclient_SOURCES=\
 		src/md5.h \
 		src/auth.h \
 		src/functions.h \
-		src/young.h \
 		src/info.h \	
 		src/drcom.h \
 		src/tracelog.h \
