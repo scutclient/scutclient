@@ -85,7 +85,6 @@ int checkWanStatus(int sock)
 	return 1;
 }
 
-	// LogWrite(INF, "ip0=%s", server_ip);
 int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 {
 	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len) 
@@ -104,7 +103,6 @@ int auth_UDP_Receiver(char *recv_data)
 	struct sockaddr_in clntaddr;
 	int recv_len, addrlen = sizeof(struct sockaddr_in);
 	recv_len = recvfrom(auth_udp_sock, recv_data, ETH_FRAME_LEN, 0,(struct sockaddr*) &clntaddr, &addrlen);
-
 	if(recv_len > 0 
 	&& memcmp(&clntaddr.sin_addr, &serv_addr.sin_addr, 4) == 0
 	&& recv_data[0]==0x07)
@@ -399,7 +397,6 @@ int Authentication(int client)
 	BaseHeartbeatTime = time(NULL);
 	while(resev)
 	{
-		// LogWrite(ERROR,"Time: %d %d", tmp_timeout.tv_sec, tmp_timeout.tv_usec);
 		FD_ZERO(&fdR); 
 		FD_SET(auth_8021x_sock, &fdR); 
 		FD_SET(auth_udp_sock, &fdR);

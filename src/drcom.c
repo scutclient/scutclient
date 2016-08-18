@@ -274,14 +274,21 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	
 	//0x0060 C10专有？？？
     send_data[packetlen++] = 0x94;
-    packetlen += 3;
+    send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
     send_data[packetlen++] = 0x06;
-    packetlen += 3;
+    send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
     send_data[packetlen++] = 0x02;
-    packetlen += 3;
+    send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
     send_data[packetlen++] = 0xf0;
     send_data[packetlen++] = 0x23;
-    packetlen += 2;
+    send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
 
     //0x0070 C10专有？？？
     send_data[packetlen++] = 0x02;
