@@ -5,20 +5,52 @@ typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
 typedef enum {MISC_0800=0x08, ALIVE_FILE=0x10, MISC_3000=0x30, MISC_2800=0x28} DRCOM_Type;
 
-static uint8_t crc32sum[4] = {0};
-static uint8_t md5info[16] = {0};
-static uint8_t tailinfo[16] = {0};
+static uint8_t crc_md5_info[16] = {0};
 static int drcom_package_id = 0;  // 包的id，每次自增1
+char drcom_misc1_flux[4];
+char drcom_misc3_flux[4];
 
-unsigned int drcom_crc32(char *data, int data_len)
+
+uint32_t checkCPULittleEndian()
 {
-	unsigned int ret = 0;
-	int i = 0;
-	for ( i = 0; i < data_len;i += 4) 
+    union
+    {
+        unsigned int a;
+        unsigned char b;
+    } c;
+    c.a = 1;
+    return (c.b == 1);
+}
+
+uint32_t big2little_32(uint32_t A)
+{
+    return ((((uint32_t)(A) & 0xff000000) >>24) | 
+        (((uint32_t)(A) & 0x00ff0000) >> 8) | 
+        (((uint32_t)(A) & 0x0000ff00) << 8) | 
+        (((uint32_t)(A) & 0x000000ff) << 24));
+}
+
+uint32_t drcom_crc32(char *data, int data_len)
+{
+	uint32_t ret = 0;
+	int i;
+	for (i = 0; i < data_len;i += 4) 
 	{
 		ret ^= *(unsigned int *) (data + i);
 		ret &= 0xFFFFFFFF;
 	}
+
+	// 大端小端的坑
+	if(checkCPULittleEndian() == 0)
+	{
+		ret = big2little_32(ret);
+	}
+	ret = (ret * 19680126) & 0xFFFFFFFF;
+	if(checkCPULittleEndian() == 0)
+	{
+		ret = big2little_32(ret);
+	}
+
 	return ret;
 }
 
@@ -120,8 +152,8 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 	Packet[23] = 0x10;		// Value-Size: 16 Bytes
 	packetlen = 24;
 	FillMD5Area(Packet+packetlen, request[19], Password, request+24);
-	// 存好md5信息，以备后面udp报文使用
-	memcpy(md5info,Packet+packetlen,16);
+	// // 存好md5信息，以备后面udp报文使用
+	// memcpy(crc_md5_info,Packet+packetlen,16);
 	packetlen += 16;
 	memcpy(Packet+packetlen, UserName, userlen);
 	packetlen += userlen;
@@ -168,7 +200,7 @@ size_t AppendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
 	return packetlen;
 }
 
-int Drcom_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_START_ALIVE_Setter(unsigned char *send_data, char *recv_data)
 {
 	int packetlen = 0;
 	send_data[packetlen++] = 0x07;
@@ -182,21 +214,24 @@ int Drcom_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	return packetlen;
 }
 
-int Drcom_ALIVE_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 {
 	int packetlen = 0;
-	send_data[packetlen++] = 0x07;
-	send_data[packetlen++] = 0x01;
-	send_data[packetlen++] = 0xf4;
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x03;
-	send_data[packetlen++] = 0x0c;
+	send_data[packetlen++] = 0x07;	// Code
+	send_data[packetlen++] = 0x01;	//id
+	send_data[packetlen++] = 0xf4;	//len(包的长度低位，一定要偶数长度的)
+	send_data[packetlen++] = 0x00;	//len(244高位)
+	send_data[packetlen++] = 0x03;	//step 第几步
+	// 填用户名长度
+	unsigned char username[32] = {0};
+	GetUserName(username);
+	send_data[packetlen++] = strlen(username); //uid len  用户ID长度
 	// 填MAC
 	uint8_t MAC[6]= {0};
 	GetMacFromDevice(MAC);
 	memcpy(send_data+packetlen, MAC, 6);
 	packetlen += 6;
-		// 填ip
+	// 填ip
 	uint8_t ip[4]= {0};
 	GetWanIpFromDevice(ip);
 	memcpy(send_data+packetlen, ip, 4);
@@ -209,33 +244,49 @@ int Drcom_ALIVE_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	// 挑战码
 	memcpy(send_data+packetlen, recv_data+8, 4);
 	packetlen += 4;
-	
+	// crc32(后面再填)
 	send_data[packetlen++] = 0xc7;
 	send_data[packetlen++] = 0x2f;
 	send_data[packetlen++] = 0x31;
 	send_data[packetlen++] = 0x01;
-	send_data[packetlen++] = 0x7e;
+	send_data[packetlen++] = 0x7e;// 做完crc32后，在把这个字节置位0
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
-	// 先填充80位0x00 (在这80位里面填充用户名和计算机名)
-	memset(send_data+packetlen,0x00,80);
 	// 填用户名
-	unsigned char username[32] = {0};
-	GetUserName(username);
 	memcpy(send_data+packetlen, username, strlen(username));
 	packetlen += strlen(username);
 	// 填计算机名
 	unsigned char hostname[32] = {0};
 	GetHostNameFromDevice(hostname);
-	memcpy(send_data+packetlen, hostname, strlen(hostname));
-	packetlen += (80 - strlen(username));
+	memcpy(send_data+packetlen, hostname, 32 - strlen(username));
+	packetlen += 32 - strlen(username);
+	//填充32个0
+	memset(send_data+packetlen,0x00,32);
+	packetlen += 12;
+	//填DNS
+	uint8_t dns[4] = {0};
+	GetWanDnsFromDevice(dns);
+	memcpy(send_data+packetlen, dns, 4);
+	packetlen += 4;
+	// 第2,3个DNS忽略
+	packetlen += 16;
 	
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x01;
-	
+	//0x0060 C10专有？？？
+    send_data[packetlen++] = 0x94;
+    packetlen += 3;
+    send_data[packetlen++] = 0x06;
+    packetlen += 3;
+    send_data[packetlen++] = 0x02;
+    packetlen += 3;
+    send_data[packetlen++] = 0xf0;
+    send_data[packetlen++] = 0x23;
+    packetlen += 2;
+
+    //0x0070 C10专有？？？
+    send_data[packetlen++] = 0x02;
+    packetlen += 3;
+
 	// 先填充64位0x00 (在这64位里面填充Drcom版本信息)
 	memset(send_data+packetlen,0x00,64);
 	// 填充Drcom版本信息
@@ -244,14 +295,80 @@ int Drcom_ALIVE_LOGIN_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	memcpy(send_data+packetlen, version, len);
 	packetlen += 64;
 	
-	// 先填充64位0x00 (在这64位里面填充HASH信息)
-	memset(send_data+packetlen,0x00,64);
+	// 先填充68位0x00 (在这64位里面填充HASH信息，预留需要补0的四位)
+	memset(send_data+packetlen,0x00,68);
 	// 填充HASH信息
 	unsigned char hash[64] = {0};
 	GetHashFromDevice(hash);
 	memcpy(send_data+packetlen, hash, strlen(hash));
 	packetlen += 64;
+	//判定是否是4的倍数
+	if(packetlen % 4 != 0)
+	{
+		//补0，使包长度为4的倍数
+		packetlen = packetlen + 4 - ( packetlen % 4 );
+	}
+	// 回填包的长度
+	send_data[2]= 0xFF & packetlen;
+	send_data[3]= 0xFF & (packetlen>>8);
 	
+	// 完成crc32校验
+	uint32_t crc = drcom_crc32(send_data, packetlen);
+	memcpy(send_data + 24, &crc, 4);
+	//缓存crc32校验到crc_md5_info前4字节
+	memcpy(crc_md5_info, &crc, 4);
+	// 完成crc32校验，回填置位0
+	send_data[28] = 0x00;
+	return packetlen;
+}
+
+int Drcom_MISC_HEART_BEAT_01_TYPE_Setter(unsigned char *send_data, char *recv_data)
+{	
+	int packetlen = 0;
+	memset(send_data, 0, 40);
+
+	send_data[packetlen++] = 0x07;
+	send_data[packetlen++] = drcom_package_id++;
+	send_data[packetlen++] = 0x28;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x0b;
+	send_data[packetlen++] = 0x01;
+	send_data[packetlen++] = 0xdc;
+	send_data[packetlen++] = 0x02;
+
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	
+	memcpy(send_data + 16, drcom_misc1_flux, 4);
+	packetlen = 40;
+
+	return packetlen;
+}
+
+int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_data)
+{
+	memcpy(&drcom_misc3_flux, recv_data + 16, 4);
+	memset(send_data, 0, 40);
+
+	int packetlen = 0;
+	send_data[packetlen++] = 0x07;
+	send_data[packetlen++] = drcom_package_id++;
+	send_data[packetlen++] = 0x28;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x0b;
+	send_data[packetlen++] = 0x03;
+	send_data[packetlen++] = 0xdc;
+	send_data[packetlen++] = 0x02;
+
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	
+	memcpy(send_data + 16, drcom_misc3_flux, 4);
+	uint8_t ip[4]= {0};
+	GetWanIpFromDevice(ip);
+	memcpy(send_data + 28, ip, 4);
+	packetlen = 40;
+
 	return packetlen;
 }
 
@@ -259,11 +376,9 @@ int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
 {
 	int packetlen = 0;
 	send_data[packetlen++] = 0xff;
-	// 填充crc信息
-	memcpy(send_data+packetlen,crc32sum,4);
-	packetlen += 4;
-	memcpy(send_data+packetlen,md5info+4,12);
-	packetlen += 12;
+	// 填充crc_md5_info信息
+	memcpy(send_data+packetlen,crc_md5_info,16);
+	packetlen += 16;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
@@ -279,63 +394,3 @@ int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	return packetlen;
 }
 
-int Drcom_MISC_2800_01_TYPE_Setter(unsigned char *send_data, char *recv_data)
-{
-	// 存好tail信息，并顺便解密，以备后面udp报文使用
-	memcpy(tailinfo,recv_data+16,16);
-	encrypt(tailinfo);
-	
-	int packetlen = 0;
-	send_data[packetlen++] = 0x07;
-	send_data[packetlen++] = drcom_package_id++;
-	send_data[packetlen++] = 0x28;
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x0b;
-	send_data[packetlen++] = 0x01;
-	send_data[packetlen++] = 0x0f;
-	send_data[packetlen++] = 0x27;
-	
-	// 先填充32位0x00 (在这32位里面填充随机的4个字节)
-	memset(send_data+packetlen,0x00,32);
-	//随机的4个字节
-	srand((unsigned)time(NULL)); /*随机种子*/
-	uint32_t random=rand()<<16 | rand();
-	memcpy(send_data+packetlen,&random,4);
-	packetlen+=32;
-	return packetlen;
-}
-
-int Drcom_MISC_2800_03_TYPE_Setter(unsigned char *send_data, char *recv_data)
-{
-	int packetlen = 0;
-	send_data[packetlen++] = 0x07;
-	send_data[packetlen++] = drcom_package_id++;
-	send_data[packetlen++] = 0x28;
-	send_data[packetlen++] = 0x00;
-	send_data[packetlen++] = 0x0b;
-	send_data[packetlen++] = 0x01;
-	send_data[packetlen++] = 0x0f;
-	send_data[packetlen++] = 0x27;
-	
-	// 先填充16位0x00 (在这32位里面填充随机的4个字节)
-	memset(send_data+packetlen,0x00,16);
-	//随机的4个字节
-	srand((unsigned)time(NULL)); /*随机种子*/
-	uint32_t random=rand()<<16 | rand();
-	memcpy(send_data+packetlen,&random,4);
-	packetlen+=16;
-	
-	// 先填充16位0x00 (在这32位里面填充crc信息)
-	memset(send_data+packetlen,0x00,16);
-	//crc信息默认4个0x00，紧跟本机ip
-	//填充本机的ip
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
-	memcpy(send_data+packetlen+4,ip,4);
-	//算crc32
-	unsigned int crc = (drcom_crc32(send_data, packetlen+16) * 19680126) & 0xFFFFFFFF;
-	// 回填crc
-	memcpy(send_data+packetlen,&crc,4);
-	packetlen+=16;
-	return packetlen;
-}

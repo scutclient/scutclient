@@ -21,7 +21,6 @@
 #include <linux/if_packet.h>
 
 #include "functions.h"
-#include "young.h"
 #include "info.h"
 #include "drcom.h"
 
