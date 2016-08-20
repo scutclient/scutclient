@@ -6,7 +6,7 @@ function index()
 	end
 		entry({"admin", "scutclient"},
 			alias("admin", "scutclient", "settings"),
-			translate("华南理工大学上网客户端"),
+			translate("华南理工大学客户端"),
 			10
 		)
 
