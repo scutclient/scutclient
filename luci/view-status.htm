@@ -17,7 +17,7 @@ end
 
 
 function get_client_status(exec_name)
-	return luci.sys.call("pidof "..exec_name.." >/dev/null")
+	return luci.sys.call("ps | grep 'scutclient' | wc -l >/dev/null")
 		and translate("没有运行")
 		or  translate("正在运行")
 end
@@ -55,16 +55,15 @@ scut_status = translate("scutclient ")..get_client_status("scutclient")
 %>
 
 <%+header%>
-<h2><a id="content" name="content">scutclient状态</a></h2>
+<h2><a id="content" name="content">客户端状态</a></h2>
 <div class="cbi-map-descr"></div>
 <h3>状态：</h3>
 <p><%=scut_status%></p>
 <p><%=ssid%></p>
 <p>WAN口：<%=get_wan_port()%>, <%=wanstatus%></p>
 <%=wanip%>
-<h3>scutclient设置：</h3>
+<h3>客户端设置：</h3>
 <a href="<%=logoff%>">下线</a><br />
-<a href="<%=redial%>">重拨</a><br />
 <p><%=client_version%></p>
 <p>开机启动：  <%=luci.sys.exec("uci get scutclient.@option[0].enable")%></p>
 <p>拨号接口:   <%=luci.sys.exec("uci get scutclient.@scutclient[0].interface")%></p>

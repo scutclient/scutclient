@@ -10,13 +10,11 @@ auth() {
 	then	
 		exit	
 	fi	
-		
-	rm /tmp/scutclient_*.log	
 
-	scutclient drcom \
+	scutclient \
 	$(uci get scutclient.@scutclient[0].username) \	
 	$(uci get scutclient.@scutclient[0].password) \		
-	$(uci get scutclient.@scutclient[0].ifname) &	
+	$(uci get network.wan.ifname) &	
 	
 }
 	
@@ -36,7 +34,11 @@ start() {
 }	
 	
 stop() {	
-	killall scutclient	
+
+	if [[ $(ps | grep 'scutclient' | wc -l) -eq 0 ]] ;then
+		killall scutclient	
+	fi
+
 	logoff	
 }	
 	

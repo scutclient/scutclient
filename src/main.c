@@ -4,6 +4,7 @@
  */
 #include "auth.h"
 #include "info.h"
+#include "tracelog.h"
 
 const static int LOGOFF = 0; // 下线标志位
 const static int DRCOM_CLIENT = 1; // Drcom客户端标志位
@@ -44,10 +45,9 @@ void init(int argc, char *argv[], int client)
 int main(int argc, char *argv[])
 {
 	int client=0;
-	printf("\n***************************************************************\n\n");
-	printf("SCUTclient is based on njit8021xclient which is made by liuqun.\n");
-	printf("Welcome to join in Router of SCUT QQ group 262939451.\n\n");
-	printf("\n***************************************************************\n");
+	LogWrite(INF,"%s","##############################################################");
+	LogWrite(INF,"%s","Welcome to join in Router of SCUT QQ group 262939451.");
+	LogWrite(INF,"%s","##############################################################");
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
 		printf("Sorry,it is unroot.\n");
@@ -56,11 +56,11 @@ int main(int argc, char *argv[])
 
 	/* 检查命令行参数格式 */
 	if (argc<2 || argc>4) {
-		printf("Command is Illegal ,You can input command like this:\n");
-		printf("    %s logoff\n", argv[0]);
-		printf("    %s username\n", argv[0]);
-		printf("    %s username password \n", argv[0]);
-		printf("    %s username password Interface_Of_Wan\n", argv[0]);
+		LogWrite(INF,"%s","Command is Illegal ,You can input command like this:");
+		LogWrite(INF,"    %s %s", argv[0],"logoff");
+		LogWrite(INF,"    %s %s", argv[0],"username");
+		LogWrite(INF,"    %s %s", argv[0],"username password ");
+		LogWrite(INF,"    %s %s", argv[0],"username password Interface_Of_Wan");
 		exit(-1);
 	} 
 

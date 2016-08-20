@@ -4,25 +4,25 @@ function index()
 	if not nixio.fs.access("/etc/config/scutclient") then
 		return
 	end
-		entry({"admin", "services", "scutclient"},
-			alias("admin", "services", "scutclient", "settings"),
-			translate("scutclient设置"),
+		entry({"admin", "scutclient"},
+			alias("admin", "scutclient", "settings"),
+			translate("华南理工大学上网客户端"),
 			10
 		)
 
-		entry({"admin", "services", "scutclient", "settings"},
+		entry({"admin", "scutclient", "settings"},
 			cbi("scutclient/scutclient"),
 			translate("设置"),
 			10
 		).leaf = true
 
-		entry({"admin", "services", "scutclient", "status"},
+		entry({"admin", "scutclient", "status"},
 			call("action_status"),
 			translate("状态"),
 			20
 		).leaf = true
 
-		entry({"admin", "services", "scutclient", "logs"},
+		entry({"admin", "scutclient", "logs"},
 			call("action_logs"),
 			translate("日志"),
 			30
@@ -32,23 +32,21 @@ end
 
 function action_status()
 	luci.template.render("scutclient/status")
-	if luci.http.formvalue("redial") == "1" then
-		luci.sys.call("/etc/init.d/scutclient restart")
-	end
 	if luci.http.formvalue("logoff") == "1" then
-		luci.sys.call("/etc/init.d/scutclient logoff")
+		luci.sys.call("/etc/init.d/scutclient stop > /dev/null")
 	end
 end
 
 
 function action_logs()
-	local logfile = string.sub(
-		luci.sys.exec("ls /tmp/scutclient_*.log|awk {'print $1'}|tail -n 1"),
-	1, -2) or ""
+	local logfile = string.sub(luci.sys.exec("ls /tmp/scutclient.log"),1, -2) or ""
+	local backuplogfile = string.sub(luci.sys.exec("ls /tmp/scutclient.log.backup.log"),1, -2) or ""
 	local logs = nixio.fs.readfile(logfile) or ""
+	local backuplogs = nixio.fs.readfile(backuplogfile) or ""
 	local dirname = "/tmp/scutclient-log-"..os.date("%Y%m%d-%H%M%S")
 	luci.template.render("scutclient/logs", {
 		logs=logs,
+		backuplogs=backuplogs,
 		dirname=dirname,
 		logfile=logfile
 	})
@@ -63,8 +61,8 @@ function action_logs()
 		"/etc/config/dhcp",
 		"/tmp/dhcp.leases",
 		"/etc/rc.local",
-		"/tmp/scutclient.cap",
-		logfile
+		logfile,
+		backuplogfile
 	}
 
 	luci.sys.call("rm /tmp/scutclient-log-*.tar")

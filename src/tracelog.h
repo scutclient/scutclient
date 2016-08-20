@@ -10,18 +10,21 @@
 #include <time.h>
 #include <stdarg.h>
 #include <unistd.h>
- 
+#include <sys/stat.h> 
+
 #define MAXLEN (2048)
 #define MAXFILEPATH (512)
 #define MAXFILENAME (50)
-typedef enum{
+typedef enum
+{
     ERROR_1=-1,
     ERROR_2=-2,
     ERROR_3=-3
 }ERROR0;
  
  
-typedef enum{
+typedef enum
+{
     NONE=0,
     ERROR=1,
     INF=2,
@@ -29,15 +32,16 @@ typedef enum{
     ALL=255
 }LOGLEVEL;
  
-typedef struct log{
+typedef struct log
+{
     char logtime[20];
     char filepath[MAXFILEPATH];
     FILE *logfile;
 }LOG;
  
-typedef struct logseting{
+typedef struct logseting
+{
     char filepath[MAXFILEPATH];
-    unsigned int maxfilelen;
     unsigned char loglevel;
 }LOGSET;
  
@@ -48,7 +52,7 @@ int LogWrite(unsigned char loglevel,char *fromat,...);
 LOGSET logsetting;
 LOG loging;
  
-const static char LogLevelText[4][10]={"ERROR","INF","DEBUG","ERROR"};
+const static char LogLevelText[4][10]={"ERROR","INF","DEBUG","ALL"};
  
 static char * getdate(char *date);
  

@@ -6,7 +6,6 @@ config option
 	option client 'SCUT Drcom'
 
 config scutclient
-	option interface 'eth0'
 	option password 'Changeme'
 	option username 'Changeme'
 	

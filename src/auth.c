@@ -278,14 +278,11 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		}
 		if(times <= 0)
 		{
-			perror("No Response!");
 			LogWrite(ERROR,"%s", "Error! No Response");
 			// 确保下线
 			sendLogoffPkt();
 			exit(EXIT_FAILURE);
 		}
-			perror("debug");
-
 		times--;
 		// 当之前广播的时候，设置为多播
 		if(send_8021x_data[1] == 0xff)
@@ -353,13 +350,11 @@ int Authentication(int client)
 		sendLogoffPkt();
 		return 0;
 	}
-
+	//发logoff确保下线
+	sendLogoffPkt();
+	sleep(5);
 	LogWrite(INF,"%s","Drcom Mode.");
 
-
-
-
-	
 	//静态全局变量auth_udp_sock
 	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (auth_udp_sock < 0) 
@@ -408,7 +403,6 @@ int Authentication(int client)
 				perror("select socket failed.");
 			break;
 			case 0:
-				LogWrite(INF,"%s","select socket timeout");
 			break;
 			default: 
 				if (FD_ISSET(auth_8021x_sock,&fdR)) 
