@@ -1,19 +1,20 @@
 scutclient
 =================
 
-±³¾°
+ç‰¹æ€§
+--------
+1.è‡ªå¸¦luciç•Œé¢
+2.é‡‡ç”¨socket rawï¼Œå‡å°‘libpcapç­‰ç­‰çš„ç¬¬ä¸‰æ–¹åº“çš„ä¾èµ–
+3.å•çº¿ç¨‹
+
+ç¼–è¯‘æ–¹æ³•
 --------
 
-±àÒëĞ£Ô°Íø¿Í»§¶Ëµ½OpenWrtÖĞ
+å…ˆæŠŠæºç æ‰“åŒ…æˆscutclient-1.6.tar.gzæ ¼å¼æ”¾åœ¨Openwrtç¼–è¯‘æ ¹ç›®å½•çš„dlæ–‡ä»¶å¤¹
+Makefile--OpenWrté‡å‘½åMakefileä¸ºæ”¾åœ¨package/scutclientä¸­ï¼ˆæ²¡æœ‰è¯¥scutclientæ–‡ä»¶å¤¹çš„è¯å°±è‡ªå·±æ–°å»ºä¸€ä¸ªï¼‰
 
-±àÒë·½·¨
---------
+è¿è¡Œmake menuconfigåï¼Œåœ¨Networkä¸­å¯ä»¥æ‰¾åˆ°scutclientï¼Œé€‰æ‹©*ç¼–è¯‘
 
-ÏÈ°ÑÔ´Âë´ò°ü³Éscutclient-1.6.tar.gz¸ñÊ½·ÅÔÚOpenwrt±àÒë¸ùÄ¿Â¼µÄdlÎÄ¼ş¼Ğ
-Makefile--OpenWrtÖØÃüÃûMakefileÎª·ÅÔÚpackage/scutclientÖĞ£¨Ã»ÓĞ¸ÃscutclientÎÄ¼ş¼ĞµÄ»°¾Í×Ô¼ºĞÂ½¨Ò»¸ö£©
+æœ€åä¿å­˜é€€å‡ºåï¼Œå¯ä»¥è¿è¡Œmake package/scutclient/compile V=sè¿›è¡Œç¼–è¯‘scutclient
 
-ÔËĞĞmake menuconfigºó£¬ÔÚNetworkÖĞ¿ÉÒÔÕÒµ½scutclient£¬Ñ¡Ôñ*±àÒë
-
-×îºó±£´æÍË³öºó£¬¿ÉÒÔÔËĞĞmake package/scutclient/compile V=s½øĞĞ±àÒëscutclient
-
-ipk°ü»á³öÏÖÔÚOpenwrt±àÒë¸ùÄ¿Â¼µÄbinÎÄ¼ş¼ĞÖĞ
+ipkåŒ…ä¼šå‡ºç°åœ¨Openwrtç¼–è¯‘æ ¹ç›®å½•çš„binæ–‡ä»¶å¤¹ä¸­
