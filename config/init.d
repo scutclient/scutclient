@@ -11,7 +11,7 @@ auth() {
 		exit	
 	fi	
 
-	scutclient $(uci get scutclient.@scutclient[0].username) $(uci get scutclient.@scutclient[0].password) $(uci get network.wan.ifname) &
+	scutclient $(uci get scutclient.@scutclient[0].username) $(uci get scutclient.@scutclient[0].password) $(uci get network.wan.ifname) &	
 	
 }
 	

@@ -27,6 +27,7 @@ function get_client_status(exec_name)
 end
 
 
+
 -- Wi-Fi
 
 if string.sub(luci.sys.exec("wifi status|grep up|head -n 1|awk {'print $2'}"), 1, 4) == "true" then
