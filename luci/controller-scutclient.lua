@@ -39,6 +39,8 @@ end
 
 
 function action_logs()
+	luci.sys.call("touch /tmp/scutclient.log")
+	luci.sys.call("touch /tmp/scutclient.log.backup.log")
 	local logfile = string.sub(luci.sys.exec("ls /tmp/scutclient.log"),1, -2) or ""
 	local backuplogfile = string.sub(luci.sys.exec("ls /tmp/scutclient.log.backup.log"),1, -2) or ""
 	local logs = nixio.fs.readfile(logfile) or ""
