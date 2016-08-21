@@ -3,11 +3,9 @@ scutclient
 
 特性
 --------
-*自带luci界面
-
-*采用socket raw，减少libpcap等等的第三方库的依赖
-
-*单线程
+* 自带luci界面
+* 采用socket raw，减少libpcap等等的第三方库的依赖
+* 单线程
 
 编译方法
 --------
