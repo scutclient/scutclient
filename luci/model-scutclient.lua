@@ -60,11 +60,13 @@ scut_drcom_version.rmempty = false
 scut_drcom_version:value("4472434f4d00cf072a00332e31332e302d32342d67656e65726963")
 scut_drcom_version:value("4472434f4d0096022a00636b2031")
 scut_drcom_version:value("4472434f4d0096022a")
+scut_drcom_version.default = "4472434f4d0096022a00636b2031"
 scut_drcom_hash = scut_drcom:option(Value, "hash", translate("DrAuthSvr.dll版本"))
 scut_drcom_hash.rmempty = false
 scut_drcom_hash:value("915e3d0281c3a0bdec36d7f9c15e7a16b59c12b8")
 scut_drcom_hash:value("d985f3d51656a15837e00fab41d3013ecfb6313f")
 scut_drcom_hash:value("2ec15ad258aee9604b18f2f8114da38db16efd00")
+scut_drcom_hash.default = "2ec15ad258aee9604b18f2f8114da38db16efd00"
 scut_drcom_server = scut_drcom:option(Value, "server_auth_ip", translate("服务器IP"))
 scut_drcom_server.rmempty = false
 scut_drcom_server.datatype = "ip4addr"
