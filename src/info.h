@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <netinet/if_ether.h>
 
 void GetWanIpAddressFromDevice(unsigned char info[]);
 void GetUdpServerIpAddressFromDevice(unsigned char info[]);

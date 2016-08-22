@@ -4,7 +4,7 @@
 
 scut = Map(
 	"scutclient",
-	translate("华南理工大学上网客户端 设置"),
+	translate("华南理工大学客户端 设置"),
 	' <a href="'..luci.dispatcher.build_url("admin/network/wireless/radio0.network1")..'">'
 	..translate("点此处去设置Wi-Fi")	..'</a>'.."<br />"
 	..' <a href="'..luci.dispatcher.build_url("admin/network/network/wan")..'">'
@@ -42,13 +42,11 @@ scut_option_mode.default = "Drcom"
 scut_client = scut:section(TypedSection, "scutclient", translate("用户信息"))
 scut_client.anonymous = true
 
-scut_client_username = scut_client:option(Value, "username", translate("用户名"), "学校提供给你的用户名，一般是学号")
+scut_client_username = scut_client:option(Value, "username", translate("用户名"), "学校提供的用户名，一般是学号")
 scut_client_username.rmempty = false
-scut_client_username.placeholder = translate("填写学校客户端的账号")
 
-scut_client_password = scut_client:option(Value, "password", translate("密码"), "学校提供给你的密码，一般是学号或者生日后六位")
+scut_client_password = scut_client:option(Value, "password", translate("密码"), "学校提供的密码，一般是学号或者生日后六位")
 scut_client_password.rmempty = false
-scut_client_password.placeholder = translate("填写学校客户端的密码")
 scut_client_password.password = true
 
 

@@ -240,6 +240,28 @@ void GetMacFromDevice(uint8_t info[])
 	unsigned char buf[16] = {0};
 	readInfoFromDevice(buf, GET_WAN_MAC);
 	transMAC(buf, MAC);
+	// 再次校验
+	sum = checkInit(MAC,6);
+	if(sum != 0)
+	{
+		// 成功
+		memcpy(info, MAC, 6);
+		return;
+	}
+	// 尝试使用socket方法获取
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	struct ifreq ifr;
+	bzero(&ifr,sizeof(ifr));
+	unsigned char devicename[16] = {0};
+	GetDeviceName(devicename);
+	strcpy(ifr.ifr_name,devicename);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER; //此处需要添加协议，网络所传程序没添加此项获取不了mac。
+	if(ioctl(sock,SIOCGIFHWADDR,&ifr) < 0)
+	{
+		perror("get mac error");
+	}
+   	close(sock);
+	memcpy(MAC,ifr.ifr_hwaddr.sa_data,6); //取输出的MAC地址
 	memcpy(info, MAC, 6);
 }
 

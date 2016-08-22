@@ -175,27 +175,6 @@ void sendLogoffPkt()
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
-int set_unblock(int fd, int flags)
-{
-	// int val;
-
-	// if((val = fcntl(fd, F_GETFL, 0)) < 0) 
-	// {
-	// 	LogWrite(ERROR,"%s", "fcntl F_GETFL error.");
-	// 	perror("fcntl F_GETFL error.");
-	// 	return EXIT_FAILURE;
-	// }
-	// val |= flags;
-
-	// if(fcntl(fd, F_SETFL, val) < 0) 
-	// {
-	// 	LogWrite(ERROR,"%s", "fcntl F_SETFL error");
-	// 	perror("fcntl F_SETFL error.");
-	// 	return EXIT_FAILURE;
-	// }
-	return 0;
-}
-
 void initAuthenticationInfo()
 {
 	uint8_t MAC[6]= {0};
@@ -326,13 +305,6 @@ int Authentication(int client)
 		exit(EXIT_FAILURE);  
 	}  
 	
-	//非阻塞(必须在bind前)
-	if(set_unblock(auth_8021x_sock, O_NONBLOCK)<0)
-	{
-		LogWrite(ERROR,"%s","Set unblock failed.");
-		perror("Set unblock failed!");
-	}
-	
 	int result = checkWanStatus(auth_8021x_sock);
 	if(result == 0)
 	{
@@ -352,9 +324,33 @@ int Authentication(int client)
 	}
 	//发logoff确保下线
 	sendLogoffPkt();
-	sleep(5);
-	LogWrite(INF,"%s","Drcom Mode.");
 
+	FD_ZERO(&fdR); 
+	FD_SET(auth_8021x_sock, &fdR);
+	tmp_timeout = timeout;
+	switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout)) 
+	{ 
+		case -1: 
+			LogWrite(ERROR,"%s","frist select socket failed.");
+			perror("frist select socket failed.");
+		break;
+		case 0:
+			LogWrite(ERROR,"%s","select time out.");
+		break;
+		default: 
+			if (FD_ISSET(auth_8021x_sock,&fdR)) 
+			{
+				if(auth_8021x_Receiver(recv_8021x_buf))
+				{
+					if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
+					{
+						LogWrite(INF,"%s","Ready!Drcom Mode Go.");
+					}
+				}
+			}
+		break;
+	}
+	
 	//静态全局变量auth_udp_sock
 	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (auth_udp_sock < 0) 
@@ -364,13 +360,7 @@ int Authentication(int client)
 		perror("Create auth_udp_sock failed.");
 		exit(EXIT_FAILURE);
 	}
-	// 非阻塞
-	if(set_unblock(auth_udp_sock, O_NONBLOCK)<0)
-	{
-		LogWrite(ERROR,"%s","set unblock failed.");
-		perror("set unblock failed.");
-	}
-	
+
 	bzero(&serv_addr,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	unsigned char server_ip[16]= {0};
@@ -511,17 +501,26 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				LogWrite(INF,"%s", "Server: Request Identity!");
 				send_8021x_data_len = appendResponseIdentity(recv_data);
 				LogWrite(INF,"%s%d", "Client: Response Identity. send_8021x_data_len = ", send_8021x_data_len);
-				break;
+			break;
 			case MD5:
 				LogWrite(INF,"%s", "Server: Request MD5-Challenge!");
 				send_8021x_data_len = appendResponseMD5(recv_data);
 				LogWrite(INF,"%s%d", "Client: Response MD5-Challenge. send_8021x_data_len = ", send_8021x_data_len);
-				break;
+			break;
+			case NOTIFICATION:
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request NOTIFICATION !");
+			break;
+			case AVAILABLE:
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE !");
+			break;
+			case ALLOCATED:
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request ALLOCATED !");
+			break;
 			default:
 				LogWrite(ERROR,"%s%x%s","Server: Request (type:0x",(EAP_Type)recv_data[22],")!Error! Unexpected request type!");
 				LogWrite(ERROR,"%s", "#scutclient Exit#");
 				exit(EXIT_FAILURE);
-				break;
+			break;
 		}
 	}
 	else if ((EAP_Code)recv_data[18] == FAILURE)
@@ -531,23 +530,22 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		isNeedHeartBeat = 0;
 		uint8_t errtype = recv_data[22];
 		LogWrite(ERROR,"%s","Server: Failure.");
-		// if (times>0)
-		// {
-			// times--;
-			// sleep(1);
-			// /* 主动发起认证会话 */
-			// send_8021x_data_len = appendStartPkt(EthHeader);
-			// LogWrite(INF,"%s","Client: Restart.");
-			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			// return ;
-		// }
-		// else
-		// {
-			// LogWrite(INF,"%s","Reconnection failed.");
-			// exit(EXIT_FAILURE);
-		// }
-		LogWrite(ERROR,"%s%x","Server: errtype=0x", errtype);
-		exit(EXIT_FAILURE);
+		if (times>0)
+		{
+			times--;
+			sleep(1);
+			/* 主动发起认证会话 */
+			send_8021x_data_len = appendStartPkt(EthHeader);
+			LogWrite(ERROR,"%s%x","Server: errtype = 0x", errtype);
+			LogWrite(INF,"%s","Client: Restart.");
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			return ;
+		}
+		else
+		{
+			LogWrite(ERROR,"%s%x","Reconnection failed.Server: errtype=0x", errtype);
+			exit(EXIT_FAILURE);
+		}
 	}
 	else if ((EAP_Code)recv_data[18] == SUCCESS)
 	{
