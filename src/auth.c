@@ -80,7 +80,7 @@ int checkWanStatus(int sock)
 	bzero(&auth_8021x_addr,sizeof(auth_8021x_addr));
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
-	auth_8021x_addr.sll_protocol  = htons(ETH_P_ALL);
+	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
 	auth_8021x_addr.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST | PACKET_OTHERHOST | PACKET_OUTGOING;
 	return 1;
 }
@@ -324,33 +324,39 @@ int Authentication(int client)
 	}
 	//发logoff确保下线
 	sendLogoffPkt();
-
-	FD_ZERO(&fdR); 
-	FD_SET(auth_8021x_sock, &fdR);
-	tmp_timeout = timeout;
-	switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout)) 
-	{ 
-		case -1: 
-			LogWrite(ERROR,"%s","frist select socket failed.");
-			perror("frist select socket failed.");
-		break;
-		case 0:
-			LogWrite(ERROR,"%s","select time out.");
-		break;
-		default: 
-			if (FD_ISSET(auth_8021x_sock,&fdR)) 
-			{
-				if(auth_8021x_Receiver(recv_8021x_buf))
+	
+	// 计时AUTH_8021X_RECV_TIMES秒，收到Fail后退出
+	BaseHeartbeatTime = time(NULL);
+	while(time(NULL) - BaseHeartbeatTime < AUTH_8021X_RECV_TIMES)
+	{
+		FD_ZERO(&fdR); 
+		FD_SET(auth_8021x_sock, &fdR);
+		tmp_timeout = timeout;
+		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout)) 
+		{ 
+			case -1: 
+				LogWrite(ERROR,"%s","frist select socket failed.");
+				perror("frist select socket failed.");
+			break;
+			case 0:
+				LogWrite(ERROR,"%s","select time out.");
+			break;
+			default: 
+				if (FD_ISSET(auth_8021x_sock,&fdR)) 
 				{
-					if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
+					if(auth_8021x_Receiver(recv_8021x_buf))
 					{
-						LogWrite(INF,"%s","Ready!Drcom Mode Go.");
+						if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
+						{
+							LogWrite(INF,"%s","Ready!Drcom Mode Go.");
+							// 退出循环
+							BaseHeartbeatTime = 0;
+						}
 					}
 				}
-			}
-		break;
+			break;
+		}
 	}
-	
 	//静态全局变量auth_udp_sock
 	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (auth_udp_sock < 0) 
@@ -468,12 +474,10 @@ int Drcom_UDP_Handler(char *recv_data)
 				case MISC_HEART_BEAT_04_TYPE: 
 				// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 					BaseHeartbeatTime = time(NULL);
-					// data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,recv_data);
 					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
 				break;
 				default:
 					LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")!Error! Unexpected request type!");
-					// LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")!Error! Unexpected request type!Restart Login...");
 				break;
 			}
 		break;
@@ -483,7 +487,6 @@ int Drcom_UDP_Handler(char *recv_data)
 		break;
 		default:
 			LogWrite(ERROR,"%s%x%s","[DRCOM_Type] UDP_Server: Request (type:0x", recv_data[2],")!Error! Unexpected request type!");
-			// LogWrite(ERROR,"%s%x%s","[DRCOM_Type] UDP_Server: Request (type:0x", recv_data[2],")!Error! Unexpected request type!Restart Login...");
 		break;
 	}
 	return data_len;
@@ -530,6 +533,8 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		isNeedHeartBeat = 0;
 		uint8_t errtype = recv_data[22];
 		LogWrite(ERROR,"%s","Server: Failure.");
+		// TODO:暂时不自动重拨
+		times = 0;
 		if (times>0)
 		{
 			times--;
