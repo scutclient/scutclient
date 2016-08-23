@@ -166,12 +166,12 @@ size_t appendResponseMD5(const uint8_t request[])
 void sendLogoffPkt()
 {
 	LogWrite(INF,"%s","Send LOGOFF.");
-	// 连发三次，确保已经下线
-	send_8021x_data_len = AppendDrcomLogoffPkt(EthHeader, send_8021x_data);
-	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+	// 连发两次，确保已经下线
+	// send_8021x_data_len = AppendDrcomLogoffPkt(EthHeader, send_8021x_data);
+	// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-	send_8021x_data_len = AppendDrcomLogoffPkt(BroadcastHeader, send_8021x_data);
+	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
@@ -219,7 +219,7 @@ void loginToGetServerMAC(uint8_t recv_data[])
 	struct ethhdr *local_ethhdr;
 	local_ethhdr = (struct ethhdr *) EthHeader;
 	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
-
+	struct timeval tmp_timeout=timeout;
 	//先发一次
 	send_8021x_data_len = appendStartPkt(MultcastHeader);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
@@ -228,9 +228,9 @@ void loginToGetServerMAC(uint8_t recv_data[])
 	while(resev ==0)
 	{
 		FD_ZERO(&fdR); 
-		FD_SET(auth_8021x_sock, &fdR); 
-		FD_SET(auth_udp_sock, &fdR); 
-		switch (select(auth_8021x_sock+1, &fdR, NULL, NULL, &timeout)) 
+		FD_SET(auth_8021x_sock, &fdR);
+		tmp_timeout=timeout;
+		switch (select(auth_8021x_sock+1, &fdR, NULL, NULL, &tmp_timeout)) 
 		{ 
 			case -1: 
 				LogWrite(ERROR,"%s","select socket failed.");
