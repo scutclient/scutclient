@@ -1,0 +1,11 @@
+#!/bin/sh
+# /etc/hotplug.d/iface/95-scutclient
+
+
+if [ $ACTION = ifup ]; then 
+    if [ $INTERFACE = wan ] || [ $INTERFACE = wan6 ]; then
+        if [ $(uci get scutclient.@option[0].plugin_redial) -eq 1 ]; then 
+		/etc/init.d/scutclient restart
+        fi
+    fi
+fi

@@ -1,9 +1,9 @@
 
 config option
 	option enable '1'
-	option boot '1'
+	option plugin_redial '0'
 	option debug '0'
-	option client 'SCUT Drcom'
+	option client 'Drcom'
 
 config scutclient
 	option password 'Changeme'

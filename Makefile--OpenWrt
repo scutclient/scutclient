@@ -74,6 +74,8 @@ define Package/scutclient/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/config/scutclient $(1)/etc/config/scutclient
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/config/init.d $(1)/etc/init.d/scutclient
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/config/95-scutclient $(1)/etc/hotplug.d/iface/95-scutclient
 	$(MAKE) -C $(PKG_BUILD_DIR) install-exec DESTDIR=$(1) 
 
 ifeq ($(CONFIG_PACKAGE_SCUTCLIENT_LUCI),y)

@@ -27,6 +27,11 @@ scut_option_enable = scut_option:option(Flag, "enable", translate("启用"))
 scut_option_enable.addremove = false
 scut_option_enable.rmempty = false
 
+scut_option_plugin_redial = scut_option:option(Flag, "plugin_redial", translate("启用插线自动重拨"))
+scut_option_plugin_redial.addremove = false
+scut_option_plugin_redial.rmempty = false
+
+
 scut_option_debug = scut_option:option(Flag, "debug", translate("打开调试日志"))
 scut_option_debug.addremove = false
 scut_option_debug.rmempty = false
@@ -104,7 +109,7 @@ scut_drcom_hostname:value(random_hostname)
 scut_drcom_hostname:value(dhcp_hostnames[1])
 
 
-scut_drcom_delay = scut_drcom:option(Value, "delay", translate("开机延时后拨号（秒）"))
+scut_drcom_delay = scut_drcom:option(Value, "delay", translate("开机延时（秒）后拨号"))
 scut_drcom_delay.rmempty = false
 scut_drcom_delay.datatype  = "integer"
 scut_drcom_delay:value("30")
