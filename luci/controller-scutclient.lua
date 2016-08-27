@@ -71,7 +71,7 @@ function action_logs()
 	luci.sys.call("rm -rf /tmp/scutclient-log-*")
 	luci.sys.call("rm /www/scutclient-log-*")
 
-	local tar_dir = dirname		--为啥上下两段用的名不一样...（刚看到报错加了一行
+	local tar_dir = dirname		
 	nixio.fs.mkdirr(tar_dir)
 	table.foreach(tar_files, function(i, v)
 			luci.sys.call("cp "..v.." "..tar_dir)
