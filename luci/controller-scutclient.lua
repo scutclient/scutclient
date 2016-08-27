@@ -73,25 +73,10 @@ function action_logs()
 
 	local tar_dir = dirname		--为啥上下两段用的名不一样...（刚看到报错加了一行
 	nixio.fs.mkdirr(tar_dir)
-	--nixio.fs.mkdirr(tar_dir.."/config_files")
 	table.foreach(tar_files, function(i, v)
-			luci.sys.call("cp "..v.." "..tar_dir)--.."/config_files")
+			luci.sys.call("cp "..v.." "..tar_dir)
 	end)
 
---[[
-	下面这段打包命令输出的。。写的时候在x86上测的还以为没事。。
-	841上跑了下发现严重影响性能。。
-	有空再想该怎么办吧= =
-	local cmds = {
-		"logread", "dmesg", "ps", "wifi status", "ifstatus wan", "ifstatus lan" ,
-		"route -n", "ifconfig -a", "iptables -L", "ip6tables -L" , "netstat -nlp",
-		"swconfig dev switch0 show"
-	}
-	nixio.fs.mkdirr(tar_dir.."/cmd-outputs")
-	table.foreach(cmds, function(i, v)
-			luci.sys.call(v.." > "..tar_dir.."/cmd-outputs/"..string.gsub(v, " ", "_"))
-	end)
---]]
 
 	local short_dir = "./"..nixio.fs.basename(tar_dir)
 	luci.sys.call("cd /tmp && tar -cvf "..short_dir..".tar "..short_dir)
