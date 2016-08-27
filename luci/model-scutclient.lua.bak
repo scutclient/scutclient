@@ -71,7 +71,6 @@ scut_drcom_server = scut_drcom:option(Value, "server_auth_ip", translate("服务
 scut_drcom_server.rmempty = false
 scut_drcom_server.datatype = "ip4addr"
 scut_drcom_server:value("211.38.210.131")
-scut_drcom_server:value("202.38.210.131")
 
 --[[ 主机名列表预置
     1.生成一个 DESKTOP-XXXXXXX 的随机
