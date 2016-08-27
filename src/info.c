@@ -237,17 +237,17 @@ void GetMacFromDevice(uint8_t info[])
 		memcpy(info, MAC, 6);
 		return;
 	}
-	unsigned char buf[16] = {0};
-	readInfoFromDevice(buf, GET_WAN_MAC);
-	transMAC(buf, MAC);
-	// 再次校验
-	sum = checkInit(MAC,6);
-	if(sum != 0)
-	{
-		// 成功
-		memcpy(info, MAC, 6);
-		return;
-	}
+	// unsigned char buf[16] = {0};
+	// readInfoFromDevice(buf, GET_WAN_MAC);
+	// transMAC(buf, MAC);
+	// // 再次校验
+	// sum = checkInit(MAC,6);
+	// if(sum != 0)
+	// {
+	// 	// 成功
+	// 	memcpy(info, MAC, 6);
+	// 	return;
+	// }
 	// 尝试使用socket方法获取
 	int sock = socket(AF_INET, SOCK_DGRAM, 0);
 	struct ifreq ifr;

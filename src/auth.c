@@ -171,7 +171,7 @@ void sendLogoffPkt()
 	// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
+	send_8021x_data_len = AppendDrcomLogoffPkt(BroadcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
