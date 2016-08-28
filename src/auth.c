@@ -94,7 +94,6 @@ int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 		perror("auth_UDP_Sender error");
 		return 0;
 	}
-	LogWrite(INF,"%s%d","auth_UDP_Sender send_data_len = ",send_data_len);
 	return 1;
 }
 
@@ -168,7 +167,7 @@ void sendLogoffPkt()
 	// 连发两次，确保已经下线
 	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-	send_8021x_data_len = AppendDrcomLogoffPkt(BroadcastHeader, send_8021x_data);
+	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
@@ -408,6 +407,7 @@ int Authentication(int client)
 		if(success_8021x && isNeedHeartBeat && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
 		{
 			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,recv_udp_data);
+			LogWrite(INF,"%s%d"," UDP_Client: Send ALIVE_HEARTBEAT, data len = ",send_udp_data_len);
 			auth_UDP_Sender(send_udp_data, send_udp_data_len);
 			// 发送后记下基线时间，开始重新计时心跳时间
 			BaseHeartbeatTime = time(NULL);
@@ -452,7 +452,7 @@ int Drcom_UDP_Handler(char *recv_data)
 				break;
 				case MISC_HEART_BEAT_02_TYPE:
 					data_len = Drcom_MISC_HEART_BEAT_03_TYPE_Setter(send_udp_data,recv_data);
-					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request MISC_HEART_BEAT_03 (type:0x",recv_data[5],")!Response MISC_HEART_BEAT_03_TYPE data len=",data_len);
+					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request MISC_HEART_BEAT_02 (type:0x",recv_data[5],")!Response MISC_HEART_BEAT_03_TYPE data len=",data_len);
 				break;
 				case MISC_HEART_BEAT_04_TYPE: 
 				// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
