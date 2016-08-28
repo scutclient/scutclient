@@ -5,10 +5,10 @@
 #define LOGOFF  0 // 下线标志位
 #define DRCOM_CLIENT  1 // Drcom客户端标志位
 
-#define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认30秒
+#define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
 #define AUTH_8021X_RECV_DELAY  1 // 客户端收8021x报文延时秒数，默认1秒
-#define AUTH_8021X_RECV_TIMES  10 // 客户端收8021x报文重试次数
+#define AUTH_8021X_RECV_TIMES  3 // 客户端收8021x报文重试次数
 
 /* 静态常量*/
 const static uint8_t BroadcastAddr[6] = {0xff,0xff,0xff,0xff,0xff,0xff}; // 广播MAC地址
@@ -121,7 +121,6 @@ int auth_8021x_Sender(unsigned char *send_data,int send_data_len)
 		perror("auth_8021x_Sender failed.");
 		return 0;
 	}
-	LogWrite(INF,"%s%d","auth_8021x_Sender send_8021x_data_len = ",send_8021x_data_len);
 	return 1;
 }
 
@@ -167,11 +166,9 @@ void sendLogoffPkt()
 {
 	LogWrite(INF,"%s","Send LOGOFF.");
 	// 连发两次，确保已经下线
-	// send_8021x_data_len = AppendDrcomLogoffPkt(EthHeader, send_8021x_data);
-	// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-	send_8021x_data_len = AppendDrcomLogoffPkt(BroadcastHeader, send_8021x_data);
+	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 }
 
@@ -264,27 +261,26 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		}
 		times--;
 		// 当之前广播的时候，设置为多播
-		if(send_8021x_data[1] == 0xff)
-		{
+		// if(send_8021x_data[1] == 0xff)
+		// {
 			send_8021x_data_len = appendStartPkt(MultcastHeader);
 			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 			LogWrite(INF,"%s","Client: Multcast Start.");
-		}
-		// 当之前多播的时候，设置为单播
-		else if(send_8021x_data[1] == 0x80)
-		{
-			send_8021x_data_len = appendStartPkt(UnicastHeader);
-			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			LogWrite(INF,"%s","Client: Unicast Start.");
-		}
-		// 当之前单播的时候，设置为广播
-		else if(send_8021x_data[1] == 0xd0)
-		{
-			send_8021x_data_len = appendStartPkt(BroadcastHeader);
-			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			LogWrite(INF,"%s","Client: Broadcast Start.");
-		}
-		
+		// }
+		// // 当之前多播的时候，设置为单播
+		// else if(send_8021x_data[1] == 0x80)
+		// {
+			// send_8021x_data_len = appendStartPkt(UnicastHeader);
+			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			// LogWrite(INF,"%s","Client: Unicast Start.");
+		// }
+		// // 当之前单播的时候，设置为广播
+		// else if(send_8021x_data[1] == 0xd0)
+		// {
+			// send_8021x_data_len = appendStartPkt(BroadcastHeader);
+			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			// LogWrite(INF,"%s","Client: Broadcast Start.");
+		// }
 	}
 }
 
@@ -339,7 +335,7 @@ int Authentication(int client)
 				perror("frist select socket failed.");
 			break;
 			case 0:
-				LogWrite(ERROR,"%s","select time out.");
+				LogWrite(INF,"%s","frist socket select time out.");
 			break;
 			default: 
 				if (FD_ISSET(auth_8021x_sock,&fdR)) 
@@ -495,7 +491,7 @@ int Drcom_UDP_Handler(char *recv_data)
 void auth_8021x_Handler(uint8_t recv_data[])
 {
 	// 根据收到的Request，回复相应的Response包
-	
+	send_8021x_data_len = 0;
 	if ((EAP_Code)recv_data[18] == REQUEST)
 	{
 		switch ((EAP_Type)recv_data[22])
@@ -538,13 +534,11 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		if (times>0)
 		{
 			times--;
-			sleep(1);
+			sleep(AUTH_8021X_RECV_DELAY);
 			/* 主动发起认证会话 */
 			send_8021x_data_len = appendStartPkt(EthHeader);
 			LogWrite(ERROR,"%s%x","Server: errtype = 0x", errtype);
-			LogWrite(INF,"%s","Client: Restart.");
-			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			return ;
+			LogWrite(INF,"%s","Client: Multcast Restart.");
 		}
 		else
 		{
@@ -559,11 +553,13 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		success_8021x = 1;
 		send_udp_data_len = Drcom_MISC_START_ALIVE_Setter(send_udp_data,recv_data);
 		// 一秒后才回复
-		sleep(1);
+		sleep(AUTH_8021X_RECV_DELAY);
 		auth_UDP_Sender(send_udp_data, send_udp_data_len);
-		return;
 	}
-	// 发送
-	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+	// 只有大于0才发送
+	if(send_8021x_data_len > 0)
+	{
+		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+	}
 	return ;
 }

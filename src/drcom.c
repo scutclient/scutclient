@@ -272,27 +272,37 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	// 第2,3个DNS忽略
 	packetlen += 16;
 	
-	//0x0060 C10专有？？？
+	//0x0060
+	// unknow
     send_data[packetlen++] = 0x94;
     send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
+	
+	// os major
     send_data[packetlen++] = 0x06;
     send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
+	
+	// os minor
     send_data[packetlen++] = 0x02;
     send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
+	
+	// os build
     send_data[packetlen++] = 0xf0;
     send_data[packetlen++] = 0x23;
     send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 
-    //0x0070 C10专有？？？
+    //0x0070
+	// os unknown
     send_data[packetlen++] = 0x02;
-    packetlen += 3;
+    send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
+	send_data[packetlen++] = 0x00;
 
 	// 先填充64位0x00 (在这64位里面填充Drcom版本信息)
 	memset(send_data+packetlen,0x00,64);
