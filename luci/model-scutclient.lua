@@ -61,10 +61,10 @@ scut_option_mode.default = "Drcom"
 scut_client = scut:section(TypedSection, "scutclient", translate("用户信息"))
 scut_client.anonymous = true
 
-scut_client_username = scut_client:option(Value, "username", translate("用户名"), "学校提供的用户名，一般是学号")
+scut_client_username = scut_client:option(Value, "username", translate("拨号用户名"), "学校提供的用户名，一般是学号")
 scut_client_username.rmempty = false
 
-scut_client_password = scut_client:option(Value, "password", translate("密码"), "学校提供的密码，一般是学号或者生日后六位")
+scut_client_password = scut_client:option(Value, "password", translate("拨号密码"), "学校提供的密码，一般是学号或者生日后六位")
 scut_client_password.rmempty = false
 scut_client_password.password = true
 
