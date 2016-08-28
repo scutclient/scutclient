@@ -81,7 +81,7 @@ int checkWanStatus(int sock)
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
-	auth_8021x_addr.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST | PACKET_OTHERHOST | PACKET_OUTGOING;
+	auth_8021x_addr.sll_pkttype = PACKET_HOST;
 	return 1;
 }
 
