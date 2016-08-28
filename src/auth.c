@@ -517,7 +517,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 		uint8_t errtype = recv_data[22];
 		LogWrite(ERROR,"%s","Server: Failure.");
 		// TODO:暂时不自动重拨
-		times = 0;
+		//times = 0;
 		if (times>0)
 		{
 			times--;
