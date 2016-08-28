@@ -10,7 +10,9 @@ scut = Map(
 	..' <a href="'..luci.dispatcher.build_url("admin/network/network/wan")..'">'
 	..translate("点此处去设置IP")..'</a>'.."<br />"
 	..' <a href="'..luci.dispatcher.build_url("admin/system/crontab")..'">'
-	..translate("点此处去设置定时任务")..'</a>'.."<br /></h3>"
+	..translate("点此处去设置定时任务")..'</a>'.."<br />"
+	..' <a href="'..luci.dispatcher.build_url("admin/system/system")..'">'
+	..translate("点此处去修改路由时间及时区")..'</a>'.."<br /></h3>"
 	.."<a href=\"http://jq.qq.com/?_wv=1027&k=27KCAyx\">"
 	.."点击加入【华工路由器审核群】：262939451".."</a><br />"
 )
