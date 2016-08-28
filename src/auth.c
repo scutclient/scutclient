@@ -81,7 +81,7 @@ int checkWanStatus(int sock)
 	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
-	auth_8021x_addr.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST | PACKET_OTHERHOST | PACKET_OUTGOING;
+	auth_8021x_addr.sll_pkttype = PACKET_HOST;
 	return 1;
 }
 
@@ -249,6 +249,10 @@ void loginToGetServerMAC(uint8_t recv_data[])
 						auth_8021x_Handler(recv_data);
 						return;
 					}
+					else
+					{
+						continue;
+					}
 				}
 			break;
 		}
@@ -259,28 +263,11 @@ void loginToGetServerMAC(uint8_t recv_data[])
 			sendLogoffPkt();
 			exit(EXIT_FAILURE);
 		}
+		
 		times--;
-		// 当之前广播的时候，设置为多播
-		// if(send_8021x_data[1] == 0xff)
-		// {
-			send_8021x_data_len = appendStartPkt(MultcastHeader);
-			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			LogWrite(INF,"%s","Client: Multcast Start.");
-		// }
-		// // 当之前多播的时候，设置为单播
-		// else if(send_8021x_data[1] == 0x80)
-		// {
-			// send_8021x_data_len = appendStartPkt(UnicastHeader);
-			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			// LogWrite(INF,"%s","Client: Unicast Start.");
-		// }
-		// // 当之前单播的时候，设置为广播
-		// else if(send_8021x_data[1] == 0xd0)
-		// {
-			// send_8021x_data_len = appendStartPkt(BroadcastHeader);
-			// auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-			// LogWrite(INF,"%s","Client: Broadcast Start.");
-		// }
+		send_8021x_data_len = appendStartPkt(MultcastHeader);
+		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+		LogWrite(INF,"%s","Client: Multcast Start.");
 	}
 }
 
