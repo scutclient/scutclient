@@ -65,9 +65,7 @@ define Build/Configure
 $(call Build/Configure/Default)
 endef
 
-define Package/scutclient/conffiles
-/etc/config/scutclient
-endef
+
 
 define Package/scutclient/install
 	$(INSTALL_DIR) $(1)/etc/config
