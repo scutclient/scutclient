@@ -10,7 +10,7 @@ config scutclient
 	option username 'Changeme'
 	
 config drcom
-	option hostname 'SCUT'
-	option server_auth_ip '211.38.210.131'
-	option version '4472434f4d00cf072a00332e31332e302d32342d67656e65726963'
-	option hash '915e3d0281c3a0bdec36d7f9c15e7a16b59c12b8'
+	option hostname 'DESKTOP'
+	option server_auth_ip '202.38.210.131'
+	option version '4472434f4d0096022a'
+	option hash '2ec15ad258aee9604b18f2f8114da38db16efd00'
