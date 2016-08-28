@@ -1,20 +1,32 @@
 -- LuCI by libc0607 (libc0607@gmail.com)
 -- 华工路由群 262939451
 
-
 scut = Map(
 	"scutclient",
 	translate("华南理工大学客户端 设置"),
-	' <h3><a href="'..luci.dispatcher.build_url("admin/network/wireless/radio0.network1")..'">'
-	..translate("点此处去设置Wi-Fi")	..'</a>'.."<br />"
-	..' <a href="'..luci.dispatcher.build_url("admin/network/network/wan")..'">'
-	..translate("点此处去设置IP")..'</a>'.."<br />"
-	..' <a href="'..luci.dispatcher.build_url("admin/system/crontab")..'">'
-	..translate("点此处去设置定时任务")..'</a>'.."<br />"
-	..' <a href="'..luci.dispatcher.build_url("admin/system/system")..'">'
-	..translate("点此处去修改路由时间及时区")..'</a>'.."<br /></h3>"
-	.."<a href=\"http://jq.qq.com/?_wv=1027&k=27KCAyx\">"
-	.."点击加入【华工路由器审核群】：262939451".."</a><br />"
+	' <input style="margin: 2px;" class="cbi-button" type="button" value="'
+	..translate("Step 1 : 点此处去设置Wi-Fi")
+	..'" onclick="javascript:location.href='
+	..luci.dispatcher.build_url("admin/network/wireless/radio0.network1")
+	..'"/>'
+	..' <input style="margin: 2px;" class="cbi-button" type="button" value="'
+	..translate("Step 2 : 点此处去设置IP")
+	..'" onclick="javascript:location.href='
+	..luci.dispatcher.build_url("admin/network/network/wan")
+	..'"/>'
+	..' <input style="margin: 2px;" class="cbi-button" type="button" value="'
+	..translate("Step 3 : 点此处去设置定时任务")
+	..'" onclick="javascript:location.href='
+	..luci.dispatcher.build_url("admin/system/crontab")
+	..'"/>'
+	..' <input style="margin: 2px;" class="cbi-button" type="button" value="'
+	..translate("Step 4 : 点此处去修改路由时间及时区")
+	..'" onclick="javascript:location.href='
+	..luci.dispatcher.build_url("admin/system/system")
+	..'"/>'
+	..' <div><input style="margin: 2px;" type="button" value="'
+	..translate("点击加入【华工路由器审核群】：262939451")
+	..'" onclick="javascript:location.href=\'http://jq.qq.com/?_wv=1027&k=27KCAyx\'"/>'
 )
 function scut.on_commit(self)
 os.execute("/etc/init.d/scutclient enable")
