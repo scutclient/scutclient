@@ -3,13 +3,12 @@ scutclient
 
 # 特性
 
-* 可选luci界面
+* 可选[luci](https://github.com/scutclient/luci-app-scutclient)界面
 * 采用socket raw，减少libpcap等等的第三方库的依赖
 * 单线程
 
 # 编译方法
 
-* 先把源码打包成scutclient-1.6.tar.gz格式放在Openwrt Buildroot的dl文件夹
 * openwrt目录重命名scutclient为放在Openwrt Buildroot的package文件夹中
 * 运行make menuconfig后，在Network中可以找到scutclient，选择*编译，然后保存退出
 * 确保执行make后没有报错，能正常编译固件后，才可以执行make package/scutclient/compile V=s进行编译scutclient
