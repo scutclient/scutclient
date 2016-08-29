@@ -10,8 +10,16 @@ scutclient
 # 编译方法
 
 * openwrt目录重命名scutclient为放在Openwrt Buildroot的package文件夹中
-* 运行make menuconfig后，在Network中可以找到scutclient，选择*编译，然后保存退出
-* 确保执行make后没有报错，能正常编译固件后，才可以执行make package/scutclient/compile V=s进行编译scutclient
+* 运行
+```shell
+make menuconfig
+```
+在Network中可以找到scutclient，选择*/M编译，然后保存退出
+* 确保执行make后没有报错，能正常编译固件后，执行
+```shell
+make package/scutclient/compile V=s
+```
+编译scutclient
 * ipk包会出现在Openwrt编译根目录的bin文件夹中
 
 # 许可证
