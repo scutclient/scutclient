@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([scutclient],[1.0]) 
-AM_INIT_AUTOMAKE([scutclient],[1.0]) 
+AC_INIT([scutclient], [1.6.1], [https://github.com/scutclient/scutclient])
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_HEADERS([config.h])
 
@@ -25,4 +25,5 @@ AC_TYPE_UINT8_T
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([bzero memset select socket strtoul])
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
