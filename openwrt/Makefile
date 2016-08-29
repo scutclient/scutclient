@@ -34,11 +34,6 @@ define Package/scutclient/description
 endef
 
 define Package/scutclient/config
-if PACKAGE_scutclient
-config PACKAGE_SCUTCLIENT_LUCI
-	bool "	Build with LuCI intergrated"
-	default y
-endif
 endef
 
 
@@ -90,16 +85,6 @@ define Package/scutclient/install
 #	$(MAKE) -C $(PKG_BUILD_DIR) install-exec DESTDIR=$(1)
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scutclient $(1)/usr/bin
-
-ifeq ($(CONFIG_PACKAGE_SCUTCLIENT_LUCI),y)
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/scutclient 
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/scutclient	 
-	$(INSTALL_BIN) ./files/luci/view-logs.htm $(1)/usr/lib/lua/luci/view/scutclient/logs.htm
-	$(INSTALL_BIN) ./files/luci/view-status.htm $(1)/usr/lib/lua/luci/view/scutclient/status.htm
-	$(INSTALL_BIN) ./files/luci/controller-scutclient.lua $(1)/usr/lib/lua/luci/controller/scutclient.lua
-	$(INSTALL_BIN) ./files/luci/model-scutclient.lua $(1)/usr/lib/lua/luci/model/cbi/scutclient/scutclient.lua
-endif
 
 endef
 
