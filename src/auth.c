@@ -264,9 +264,21 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		}
 		
 		times--;
-		send_8021x_data_len = appendStartPkt(MultcastHeader);
-		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-		LogWrite(INF,"%s","Client: Multcast Start.");
+
+		// 当之前广播的时候，设置为多播
+		if(send_8021x_data[1] == 0xff)
+		{
+			send_8021x_data_len = appendStartPkt(MultcastHeader);
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			LogWrite(INF,"%s","Client: Multcast Start.");
+		}
+		// 当之前多播的时候，设置为广播
+		else if(send_8021x_data[1] == 0x80)
+		{
+			send_8021x_data_len = appendStartPkt(BroadcastHeader);
+			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
+			LogWrite(INF,"%s","Client: Broadcast Start.");
+		}
 	}
 }
 
@@ -317,11 +329,11 @@ int Authentication(int client)
 		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout)) 
 		{ 
 			case -1: 
-				LogWrite(ERROR,"%s","frist select socket failed.");
-				perror("frist select socket failed.");
+				LogWrite(ERROR,"%s","first select socket failed.");
+				perror("first select socket failed.");
 			break;
 			case 0:
-				LogWrite(INF,"%s","frist socket select time out.");
+				LogWrite(INF,"%s","first socket select time out.");
 			break;
 			default: 
 				if (FD_ISSET(auth_8021x_sock,&fdR)) 
