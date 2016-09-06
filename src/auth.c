@@ -37,7 +37,7 @@ static int auth_udp_sock = 0; // udp的socket描述符
 /* 静态变量*/
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
-typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
+typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED_0x07=7, ALLOCATED_0x08=8} EAP_Type;
 typedef uint8_t EAP_ID;
 struct sockaddr_in serv_addr,local_addr;
 // 子函数声明
@@ -506,16 +506,19 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				LogWrite(INF,"%s%d", "Client: Response MD5-Challenge. send_8021x_data_len = ", send_8021x_data_len);
 			break;
 			case NOTIFICATION:
-				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request NOTIFICATION !");
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request NOTIFICATION !Pls report it.");
 			break;
 			case AVAILABLE:
-				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE !");
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE !Pls report it.");
 			break;
-			case ALLOCATED:
-				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request ALLOCATED !");
+			case ALLOCATED_0x07:
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request ALLOCATED_0x07 !Pls report it.");
+			break;
+			case ALLOCATED_0x08:
+				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request ALLOCATED_0x08 !Pls report it.");
 			break;
 			default:
-				LogWrite(ERROR,"%s%x%s","Server: Request (type:0x",(EAP_Type)recv_data[22],")!Error! Unexpected request type!");
+				LogWrite(ERROR,"%s%x%s","Server: Request (type:0x",(EAP_Type)recv_data[22],")!Error! Unexpected request type!Pls report it.");
 				LogWrite(ERROR,"%s", "#scutclient Exit#");
 				exit(EXIT_FAILURE);
 			break;
