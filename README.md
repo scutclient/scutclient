@@ -7,20 +7,31 @@ scutclient
 * 采用socket raw，减少libpcap等等的第三方库的依赖
 * 单线程
 
-# 编译方法
+# OpenWrt编译方法
 
 * openwrt目录重命名scutclient为放在Openwrt Buildroot的package文件夹中
 * 运行
-```shell
+```bash
 make menuconfig
 ```
 在Network中可以找到scutclient，选择*/M编译，然后保存退出
 * 确保执行make后没有报错，能正常编译固件后，执行
-```shell
+```bash
 make package/scutclient/compile V=s
 ```
-编译scutclient
-* ipk包会出现在Openwrt编译根目录的bin文件夹中
+编译程序包
+
+# 直接编译
+
+```bash
+autoreconf -fi
+./configure
+make
+make install
+```
+configure添加 `--prefix="/path/to/bin"` 可指定安装目录
+
+运行需要root权限
 
 # 许可证
 
