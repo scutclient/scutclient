@@ -45,9 +45,9 @@ void init(int argc, char *argv[], int client)
 int main(int argc, char *argv[])
 {
 	int client=0;
-	LogWrite(INF,"%s","##############################################################");
+	LogWrite(INF,"%s","#####################################################");
 	LogWrite(INF,"%s","Welcome to join in Router of SCUT QQ group 262939451.");
-	LogWrite(INF,"%s","##############################################################");
+	LogWrite(INF,"%s","#####################################################");
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
 		printf("Sorry,it is unroot.\n");
