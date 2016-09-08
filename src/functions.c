@@ -7,7 +7,7 @@ void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
 	GetDebugFromDevice(debug);
 	if(strcmp(debug,"1") == 0)
 	{
-		printf("\n*****************Send %s info***************************\n",type);
+		printf("\n********************Send %s info*********************\n",type);
 		int m,n=0;
 		for(m=0;m<=packetlen-1;m++)
 		{
