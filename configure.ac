@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
+AC_PREREQ([2.68])
 AC_INIT([scutclient], [2.0], [https://github.com/scutclient/scutclient])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/main.c])
