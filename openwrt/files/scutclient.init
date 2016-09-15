@@ -2,8 +2,12 @@
 	
 START=99	
 STOP=15	
-	
-	
+
+EXTRA_COMMANDS="logoff"
+EXTRA_HELP=<<EOF
+	logoff	Log off manually
+EOF
+
 auth() {	
 	
 	if [ $(uci get scutclient.@option[0].enable) -eq 0 ]	
@@ -15,12 +19,20 @@ auth() {
 	
 }
 
-start() {
+logoff() {
+	scutclient logoff
+}
+
+boot() {
 	if [ $(uci get scutclient.@option[0].enable) -eq 0 ]
 	then
 		exit
 	fi
 	sleep $(uci get scutclient.@drcom[0].delay)
+	auth
+}
+
+start() {
 	auth
 }	
 	
