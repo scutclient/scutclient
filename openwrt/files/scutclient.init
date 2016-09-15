@@ -9,14 +9,7 @@ EXTRA_HELP=<<EOF
 EOF
 
 auth() {	
-	
-	if [ $(uci get scutclient.@option[0].enable) -eq 0 ]	
-	then	
-		exit	
-	fi	
-
-	scutclient $(uci get scutclient.@scutclient[0].username) $(uci get scutclient.@scutclient[0].password) $(uci get network.wan.ifname) &	
-	
+	scutclient $(uci get scutclient.@scutclient[0].username) $(uci get scutclient.@scutclient[0].password) $(uci get network.wan.ifname) &
 }
 
 logoff() {
@@ -24,26 +17,25 @@ logoff() {
 }
 
 boot() {
-	if [ $(uci get scutclient.@option[0].enable) -eq 0 ]
-	then
-		exit
-	fi
+	[ $(uci get scutclient.@option[0].enable) -eq 0 ] && exit
 	sleep $(uci get scutclient.@drcom[0].delay)
 	auth
 }
 
 start() {
 	auth
-}	
-	
-stop() {	
-	if [[ $(ps | grep 'scutclient' | wc -l) -eq 0 ]] ;then
-		killall scutclient	
+}
+
+stop() {
+	if [ $(ps | grep -cF 'scutclient') -gt 1 ]
+	then
+		killall scutclient
 	fi
-}	
-	
+}
+
 restart() {	
-	stop	
+	stop
 	auth	
-}	
+}
+
 	
