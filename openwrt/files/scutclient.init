@@ -27,11 +27,6 @@ start() {
 }
 
 stop() {
-	if [ $(ps | grep -cF 'scutclient') -gt 1 ]
-	then
-		killall scutclient
-	fi
+	killall scutclient
 }
-
-#override restart() may cause unkown problems
 	

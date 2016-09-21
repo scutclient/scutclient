@@ -30,6 +30,8 @@ const unsigned char GET_UDP_SERVER_IP[]="uci get scutclient.@drcom[0].server_aut
 const unsigned char GET_VERSION[]="uci get scutclient.@drcom[0].version"; // 获取版本号
 const unsigned char GET_HASH[]="uci get scutclient.@drcom[0].hash"; // 获取HASH值
 const unsigned char GET_DEBUG[]="uci get scutclient.@option[0].debug"; // 获取是否开启debug日志
+const unsigned char GET_RANDOM_STR[]="cat /proc/sys/kernel/random/uuid"; // 获取随机字符串
+const unsigned char FIX_HOSTNAME_STR[]="DESKTOP-"; // 获取固定主机名开头
 /* 静态常量*/
 
 int trim(char s[])  
@@ -278,6 +280,13 @@ void GetHostNameFromDevice(unsigned char *info)
 	readInfoFromDevice(buf, GET_HOST_NAME);
 	strcpy(HostName,buf);
 	strcpy(info,HostName);
+}
+
+void SetRandomHostName()
+{
+	readInfoFromDevice(buf, GET_HOST_NAME);
+	strcat(s,ss);
+	strcpy(HostName,info);
 }
 
 int GetVersionFromDevice(unsigned char *info)
