@@ -33,9 +33,5 @@ stop() {
 	fi
 }
 
-restart() {	
-	stop
-	auth	
-}
-
+#override restart() may cause unkown problems
 	
