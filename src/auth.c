@@ -490,6 +490,12 @@ int Drcom_UDP_Handler(char *recv_data)
 void auth_8021x_Handler(uint8_t recv_data[])
 {
 	// 根据收到的Request，回复相应的Response包
+
+	// 带eapol头的总长度
+	uint16_t pkg_len = 0;
+	memcpy(&pkg_len, recv_data + 20, sizeof(pkg_len));
+	pkg_len = htons(pkg_len);
+
 	send_8021x_data_len = 0;
 	if ((EAP_Code)recv_data[18] == REQUEST)
 	{
@@ -506,7 +512,10 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				LogWrite(INF,"%s%d", "Client: Response MD5-Challenge. send_8021x_data_len = ", send_8021x_data_len);
 			break;
 			case NOTIFICATION:
-				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request NOTIFICATION !Pls report it.");
+				// 23是data的偏移量，pkg_len-5是减去eapol头部的data的长度
+				// 在信息的最后补0，方便打印
+				recv_data[23 + pkg_len - 5] = 0;
+				LogWrite(ERROR,"%s%s","Error! Unexpected request type!Server: Request NOTIFICATION !Pls report it.Notification is ", recv_data[23]);
 			break;
 			case AVAILABLE:
 				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE !Pls report it.");

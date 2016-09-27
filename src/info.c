@@ -284,9 +284,9 @@ void GetHostNameFromDevice(unsigned char *info)
 
 void SetRandomHostName()
 {
-	readInfoFromDevice(buf, GET_HOST_NAME);
-	strcat(s,ss);
-	strcpy(HostName,info);
+	// readInfoFromDevice(buf, GET_HOST_NAME);
+	// strcat(s,ss);
+	// strcpy(HostName,info);
 }
 
 int GetVersionFromDevice(unsigned char *info)
