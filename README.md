@@ -29,6 +29,8 @@ make package/scutclient/compile V=s
 
 SCUT Router Group (Audit) on QQ : [262939451](http://jq.qq.com/?_wv=1027&k=2EzygcA)
 
+SCUT Router Group on [Sina Weibo](http://weibo.com/u/5148048459)
+
 # Licenses
 
 [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.html)
