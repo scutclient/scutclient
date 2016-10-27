@@ -153,7 +153,7 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 	packetlen = 24;
 	FillMD5Area(Packet+packetlen, request[19], Password, request+24);
 	// // 存好md5信息，以备后面udp报文使用
-	// memcpy(crc_md5_info,Packet+packetlen,16);
+	memcpy(crc_md5_info,Packet+packetlen,16);
 	packetlen += 16;
 	memcpy(Packet+packetlen, UserName, userlen);
 	packetlen += userlen;
