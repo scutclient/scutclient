@@ -17,12 +17,18 @@ sudo make install
 ```
 Configure with `--prefix="/path/to/bin"` to specify destination.
 
-# OpenWrt
+# OpenWrt/LEDE
 
+* Install [OpenWrt build system](https://wiki.openwrt.org/doc/howto/buildroot.exigence)(Use source or SDK or ImageBuilder)
 * Place "openwrt" folder in Buildroot/packages and renamed "scutclient"
-* Build command
+* Build (Internet access is needed for downloading sources)
 ```bash
 make package/scutclient/compile V=s
+```
+
+Notice: We found out that you need to install the following dependices
+```
+ccache automake
 ```
 
 # Contact us
