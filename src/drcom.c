@@ -405,9 +405,9 @@ int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
 	packetlen += 16;
 	
 	//时间信息
-	uint16_t timeinfo = time(NULL);
-	memcpy(send_data+packetlen,&timeinfo,2);
-	packetlen += 2;
+	time_t timeinfo = time(NULL);
+	send_data[packetlen++] = 0xff & timeinfo;
+	send_data[packetlen++] = 0xff & (timeinfo >> 8);
 	return packetlen;
 }
 
