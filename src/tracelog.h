@@ -54,7 +54,3 @@ LOG loging;
  
 const static char LogLevelText[4][10]={"ERROR","INF","DEBUG","ALL"};
  
-static char * getdate(char *date);
- 
-
- 

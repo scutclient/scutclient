@@ -54,7 +54,7 @@ uint32_t drcom_crc32(char *data, int data_len)
 	return ret;
 }
 
-void encrypt(unsigned char *info)
+void encryptDrcomInfo(unsigned char *info)
 {
 	int i;
 	unsigned char *chartmp= NULL;

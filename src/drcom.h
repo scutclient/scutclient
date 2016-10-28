@@ -14,4 +14,4 @@ int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_da
 int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data);
 
 uint8_t tailinfo[16];
-void encrypt(unsigned char *info);
+void encryptDrcomInfo(unsigned char *info);

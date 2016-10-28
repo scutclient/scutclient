@@ -450,7 +450,7 @@ int Drcom_UDP_Handler(char *recv_data)
 		case MISC_RESPONSE_INFO:
 			// 存好tail信息，并顺便解密，以备后面udp报文使用
 			memcpy(tailinfo,recv_data+16,16);
-			encrypt(tailinfo);
+			encryptDrcomInfo(tailinfo);
 			data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data,recv_data);
 			isNeedHeartBeat = 1;
 			LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_INFO (step:0x",recv_data[4],")!Send MISC_HEART_BEAT_01, data len = ",data_len);
