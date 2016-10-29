@@ -19,9 +19,10 @@ Configure with `--prefix="/path/to/bin"` to specify destination.
 
 # OpenWrt/LEDE
 
-* Install [OpenWrt build system](https://wiki.openwrt.org/doc/howto/buildroot.exigence)(Use source or SDK or ImageBuilder)
-* Place "openwrt" folder in Buildroot/packages and renamed "scutclient"
-* Build (Internet access is needed for downloading sources)
+* Install [OpenWrt/LEDE build system](https://wiki.openwrt.org/doc/howto/buildroot.exigence) and essential dependencies. Use SDK(recommended), source code or ImageBuilder)
+* Place "openwrt" folder in Buildroot/packages and renamed "scutclient".
+* If you use source code, you should run `make menuconfig` to configure target platform.
+* Build the package (Internet access is needed for downloading sources)
 ```bash
 make package/scutclient/compile V=s
 ```
