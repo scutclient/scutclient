@@ -17,6 +17,8 @@ sudo make install
 ```
 Configure with `--prefix="/path/to/bin"` to specify destination.
 
+It cannot run on macOS, use [drcom-generic on python(x)](https://github.com/drcoms/drcom-generic) instead.
+
 # OpenWrt/LEDE
 
 * Install [OpenWrt/LEDE build system](https://wiki.openwrt.org/doc/howto/buildroot.exigence) and essential dependencies. Use SDK(recommended), source code or ImageBuilder)

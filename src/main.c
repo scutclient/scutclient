@@ -45,24 +45,25 @@ void init(int argc, char *argv[], int client)
 int main(int argc, char *argv[])
 {
 	int client=0;
-	LogWrite(INF,"%s","#####################################################");
-	LogWrite(INF,"%s","Welcome to join in Router of SCUT QQ group 262939451.");
-	LogWrite(INF,"%s","#####################################################");
+	LogWrite(INF,"%s","##################################");
+	LogWrite(INF,"%s","Powered by Scutclient Project");
+	LogWrite(INF,"%s","Contact us with QQ group 262939451");
+	LogWrite(INF,"%s","##################################");
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
-		printf("Sorry,it is unroot.\n");
+		printf("You need to be root\n");
 		exit(-1);
 	}
 
 	/* 检查命令行参数格式 */
 	if (argc<2 || argc>4) {
-		LogWrite(INF,"%s","Command is Illegal ,You can input command like this:");
+		LogWrite(INF,"%s","Usage:");
 		LogWrite(INF,"    %s %s", argv[0],"logoff");
-		LogWrite(INF,"    %s %s", argv[0],"username");
-		LogWrite(INF,"    %s %s", argv[0],"username password ");
-		LogWrite(INF,"    %s %s", argv[0],"username password Interface_Of_Wan");
+		//Deprecated usage, don't make assumption on password
+		//LogWrite(INF,"    %s %s", argv[0],"username");
+		LogWrite(INF,"    %s %s", argv[0],"<username> <password> [<interface>]");
 		exit(-1);
-	} 
+	}
 
 	client = DRCOM_CLIENT;
 	
