@@ -469,7 +469,8 @@ int Drcom_UDP_Handler(char *recv_data)
 				case MISC_HEART_BEAT_04_TYPE: 
 				// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 					BaseHeartbeatTime = time(NULL);
-					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
+					//LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
+					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")! Waiting for the next heartbeat cycle");
 				break;
 				default:
 					LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")!Error! Unexpected request type!");
