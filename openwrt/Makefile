@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2016 SCUT Router Term
+# Copyright (C) 2016-2017 SCUT Router Term
 #
 # This is free software, licensed under the GNU Affero General Public License v3.
 # See /COPYING for more information.
@@ -8,15 +8,17 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
+# Update source version and package version at the same time
 PKG_NAME:=scutclient
-PKG_VERSION:=2.2-20161029
+PKG_VERSION:=2.2-20170325
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/scutclient/scutclient.git
-PKG_SOURCE_VERSION:=ee1c353b908c36b63568fd0b3c8e04593b4da2e2
+PKG_SOURCE_VERSION:=cdb4fd579aea4adbe4fbb280d8a35fefb738af1b
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+
 PKG_MAINTAINER:=Scutclient Project
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_LICENSE:=AGPL-3.0
@@ -87,7 +89,6 @@ define Package/scutclient/install
 	$(INSTALL_BIN) ./files/scutclient.init $(1)/etc/init.d/scutclient
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/scutclient.hotplug $(1)/etc/hotplug.d/iface/95-scutclient
-#	$(MAKE) -C $(PKG_BUILD_DIR) install-exec DESTDIR=$(1)
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scutclient $(1)/usr/bin
 
