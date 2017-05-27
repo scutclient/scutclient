@@ -34,6 +34,10 @@ Notice: We found out that you need to install the following dependices
 ccache automake
 ```
 
+# Padavan
+
+See [hanwckf/scutclient](https://github.com/hanwckf/scutclient)
+
 # Contact us
 
 SCUT Router Group (Audit) on QQ : [262939451](http://jq.qq.com/?_wv=1027&k=2EzygcA)
