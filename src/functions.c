@@ -4,8 +4,9 @@
 void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
 {
 	unsigned char debug[8] = {0};
-	GetDebugFromDevice(debug);
-	if(strcmp(debug,"1") == 0)
+	//GetDebugFromDevice(debug);
+	//if(strcmp(debug,"1") == 0)
+	if (0)
 	{
 		printf("\n********************Send %s info*********************\n",type);
 		int m,n=0;

@@ -1,6 +1,25 @@
 #include "drcom.h"
 #include "functions.h"
 
+
+
+extern uint8_t	udp_server_ip[4];	// ip address
+extern uint8_t	ip[4];	// ip address
+extern uint8_t	dns[4];
+extern uint8_t	MAC[6];
+extern unsigned char		UserName[32];
+extern unsigned char		Password[32];
+extern unsigned char		DeviceName[32];
+extern unsigned char		HostName[32];
+extern unsigned char		Version[64];
+extern int					Version_len ;
+extern unsigned char		Hash[64] ;
+
+
+extern unsigned char		ipaddr[16];
+extern unsigned char		udp_server_ipaddr;
+
+
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
 typedef enum {MISC_0800=0x08, ALIVE_FILE=0x10, MISC_3000=0x30, MISC_2800=0x28} DRCOM_Type;
@@ -9,6 +28,7 @@ static uint8_t crc_md5_info[16] = {0};
 static int drcom_package_id = 0;  // 包的id，每次自增1
 char drcom_misc1_flux[4];
 char drcom_misc3_flux[4];
+
 
 
 uint32_t checkCPULittleEndian()
@@ -111,8 +131,8 @@ size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[],
 	Packet[packetlen++] = 0x61;
 	Packet[packetlen++] = 0x0;
 	Packet[packetlen++] = 0x0;
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
+	//uint8_t ip[4]= {0};
+	//GetWanIpFromDevice(ip);
 	memcpy(Packet+packetlen, ip, 4);
 	packetlen += 4;
 	if(packetlen < 96)
@@ -162,8 +182,8 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 	Packet[packetlen++]= 0x61;
 	Packet[packetlen++]= 0x2a;
 	Packet[packetlen++]= 0x0;
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
+	//uint8_t ip[4]= {0};
+	//GetWanIpFromDevice(ip);
 	memcpy(Packet+packetlen, ip, 4);  // 填充ip
 	packetlen += 4;
 	// 补填前面留空的两处Length
@@ -223,17 +243,17 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	send_data[packetlen++] = 0x00;	//len(244高位)
 	send_data[packetlen++] = 0x03;	//step 第几步
 	// 填用户名长度
-	unsigned char username[32] = {0};
-	GetUserName(username);
-	send_data[packetlen++] = strlen(username); //uid len  用户ID长度
+	//unsigned char username[32] = {0};
+	//GetUserName(username);
+	send_data[packetlen++] = strlen(UserName); //uid len  用户ID长度
 	// 填MAC
-	uint8_t MAC[6]= {0};
-	GetMacFromDevice(MAC);
+	//uint8_t MAC[6]= {0};
+	//GetMacFromDevice(MAC);
 	memcpy(send_data+packetlen, MAC, 6);
 	packetlen += 6;
 	// 填ip
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
+	//uint8_t ip[4]= {0};
+	//GetWanIpFromDevice(ip);
 	memcpy(send_data+packetlen, ip, 4);
 	packetlen += 4;
 	
@@ -254,19 +274,19 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	send_data[packetlen++] = 0x00;
 	send_data[packetlen++] = 0x00;
 	// 填用户名
-	memcpy(send_data+packetlen, username, strlen(username));
-	packetlen += strlen(username);
+	memcpy(send_data+packetlen, UserName, strlen(UserName));
+	packetlen += strlen(UserName);
 	// 填计算机名
-	unsigned char hostname[32] = {0};
-	GetHostNameFromDevice(hostname);
-	memcpy(send_data+packetlen, hostname, 32 - strlen(username));
-	packetlen += 32 - strlen(username);
+	//unsigned char hostname[32] = {0};
+	//GetHostNameFromDevice(hostname);
+	memcpy(send_data+packetlen, HostName, 32 - strlen(UserName));
+	packetlen += 32 - strlen(UserName);
 	//填充32个0
 	memset(send_data+packetlen,0x00,32);
 	packetlen += 12;
 	//填DNS
-	uint8_t dns[4] = {0};
-	GetWanDnsFromDevice(dns);
+	//uint8_t dns[4] = {0};
+	//GetWanDnsFromDevice(dns);
 	memcpy(send_data+packetlen, dns, 4);
 	packetlen += 4;
 	// 第2,3个DNS忽略
@@ -307,17 +327,17 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	// 先填充64位0x00 (在这64位里面填充Drcom版本信息)
 	memset(send_data+packetlen,0x00,64);
 	// 填充Drcom版本信息
-	unsigned char version[64] = {0};
-	int len = GetVersionFromDevice(version);
-	memcpy(send_data+packetlen, version, len);
+	//unsigned char version[64] = {0};
+	//int len = GetVersionFromDevice(version);
+	memcpy(send_data+packetlen, Version, Version_len);
 	packetlen += 64;
 	
 	// 先填充68位0x00 (在这64位里面填充HASH信息，预留需要补0的四位)
 	memset(send_data+packetlen,0x00,68);
 	// 填充HASH信息
-	unsigned char hash[64] = {0};
-	GetHashFromDevice(hash);
-	memcpy(send_data+packetlen, hash, strlen(hash));
+	//unsigned char hash[64] = {0};
+	//GetHashFromDevice(hash);
+	memcpy(send_data+packetlen, Hash, strlen(Hash));
 	packetlen += 64;
 	//判定是否是4的倍数
 	if(packetlen % 4 != 0)
@@ -381,8 +401,8 @@ int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_da
 	send_data[packetlen++] = 0x00;
 	
 	memcpy(send_data + 16, drcom_misc3_flux, 4);
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
+	//uint8_t ip[4]= {0};
+	//GetWanIpFromDevice(ip);
 	memcpy(send_data + 28, ip, 4);
 	packetlen = 40;
 

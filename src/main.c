@@ -6,45 +6,38 @@
 #include "info.h"
 #include "tracelog.h"
 
+/* \BE\B2̬\B1\E4\C1\BF*/
+uint8_t	udp_server_ip[4] = {0};	// ip address
+uint8_t	ip[4] = {0};	// ip address
+uint8_t	mask[4] = {0};
+uint8_t	gateway[4] = {0};
+uint8_t	dns[4] = {0};
+uint8_t	MAC[6] = {0};
+// 反正这里后面都是0应该没什么问题吧。。。（Flag
+unsigned char		UserName[32] = {0};
+unsigned char		Password[32] = {0};
+unsigned char		DeviceName[32] = {0};
+unsigned char		HostName[32] = {0};
+unsigned char		Version[64] = {0};
+int					Version_len = 0;
+unsigned char		Hash[64] = {0};
+
+
+unsigned char		ipaddr[16] = {0};
+unsigned char		udp_server_ipaddr[16] = {0};
+static unsigned char		Debug[8] = {0};
+
+
+
 const static int LOGOFF = 0; // 下线标志位
 const static int DRCOM_CLIENT = 1; // Drcom客户端标志位
 
-void init(int argc, char *argv[], int client)
-{
-	if(client == LOGOFF)
-	{
-		InitDeviceName();
-		return;
-	}
-	int index = 0;
-	if(client != DRCOM_CLIENT)
-	{
-		index = 1;
-	}
-	if (argc == (4+index))
-	{
-		SetDeviceName(argv[3+index]); // 允许从命令行指定设备名
-		InitUserName(argv[1+index]);
-		InitPassword(argv[2+index]);	
-	} 
-	if (argc == (3+index) || argc == (2+index)) 
-	{
-		InitUserName(argv[1+index]);
-		if (argc == (2+index))
-		{
-			InitPassword(argv[1+index]);
-		}
-		else 
-		{
-			InitPassword(argv[2+index]);
-		}
-		InitDeviceName();
-	} 
-}
 
 int main(int argc, char *argv[])
 {
-	int client=0;
+	int client = 1;
+	int ch;
+	uint8_t buf[128];
 	LogWrite(INF,"%s","##################################");
 	LogWrite(INF,"%s","Powered by Scutclient Project");
 	LogWrite(INF,"%s","Contact us with QQ group 262939451");
@@ -55,25 +48,56 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	/* 检查命令行参数格式 */
-	if (argc<2 || argc>4) {
-		LogWrite(INF,"%s","Usage:");
-		LogWrite(INF,"    %s %s", argv[0],"logoff");
-		//Deprecated usage, don't make assumption on password
-		//LogWrite(INF,"    %s %s", argv[0],"username");
-		LogWrite(INF,"    %s %s", argv[0],"<username> <password> [<interface>]");
-		exit(-1);
-	}
 
-	client = DRCOM_CLIENT;
-	
-	if( *argv[1]=='l' || *argv[1]=='L')
-	{
-		client = LOGOFF;
+	// see info.h for more about long_options
+	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:o",
+									long_options, NULL)) != -1) {
+		switch(ch) {
+		case 'u':
+			strcpy(UserName, optarg);
+		break;
+		case 'p':
+			strcpy(Password, optarg);
+		break;
+		case 'f':
+			strcpy(DeviceName, optarg);
+		break;
+		case 'm':
+			transMAC(optarg, MAC);
+		break;
+		case 'a':
+			strcpy(ipaddr, optarg);
+			transIP(optarg, ip);
+		break;
+		case 'n':
+			transIP(optarg, dns);
+		break;
+		case 't':
+			strcpy(HostName, optarg);
+		break;
+		case 's':
+			strcpy(udp_server_ipaddr, optarg);
+			transIP(optarg, udp_server_ip);
+		break;
+		case 'c':
+			hexStrToByte(optarg, buf, strlen(optarg));
+			Version_len = strlen(optarg) / 2;
+			memcpy(Version, buf, Version_len);
+		break;
+		case 'h':
+			strcpy(Hash, optarg);
+		break;
+		case 'o':
+			client = LOGOFF;
+		break;
+		default:
+			printf("Usage:\n");
+			printf("scutclient --username USERNAME --password PASSWORD --iface ethX --mac 11:22:33:44:55:66 --ip 123.45.6.78 --dns 222.201.130.30 --hostname DESKTOP-2333333 --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00");
+			exit(-1);
+		break;
+		}
+
 	}
-	
-	/* 初始化环境信息 */
-	init(argc,argv,client);
 	
 	/* 调用子函数完成802.1X认证 */
 	Authentication(client);

@@ -2,6 +2,31 @@
 #include "tracelog.h"
 #include "info.h"
 
+
+/* \BE\B2̬\B1\E4\C1\BF*/
+
+
+
+
+extern uint8_t	udp_server_ip[4];	// ip address
+extern unsigned char udp_server_ipaddr[16];
+extern uint8_t	ip[4];	// ip address
+extern unsigned char		ipaddr[16];
+extern uint8_t	dns[4];
+extern uint8_t	MAC[6];
+extern unsigned char		UserName[32];
+extern unsigned char		Password[32];
+extern unsigned char		DeviceName[32];
+extern unsigned char		HostName[32];
+extern unsigned char		Version[64];
+extern int			Version_len ;
+extern unsigned char		Hash[64] ;
+
+
+
+
+
+
 #define LOGOFF  0 // 下线标志位
 #define DRCOM_CLIENT  1 // Drcom客户端标志位
 
@@ -51,9 +76,9 @@ int checkWanStatus(int sock)
 {
 	struct ifreq ifr;
 	bzero(&ifr,sizeof(ifr));
-	unsigned char devicename[16] = {0};
-	GetDeviceName(devicename);
-	strcpy(ifr.ifr_name,devicename);
+	//unsigned char devicename[16] = {0};
+	//GetDeviceName(devicename);
+	strcpy(ifr.ifr_name,DeviceName);
 	if(ioctl(sock, SIOCGIFFLAGS, &ifr) < 0)
 	{
 		LogWrite(ERROR,"%s","ioctl get if_flag error.");
@@ -90,8 +115,8 @@ int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len) 
 	{ 
 		//ret不等于send_data长度报错
-		LogWrite(ERROR,"%s","auth_UDP_Sender error.");
-		perror("auth_UDP_Sender error");
+		LogWrite(ERROR,"%s","auth_UDP_Sender error.6666666666");
+		perror("auth_UDP_Sender error23333333");
 		return 0;
 	}
 	return 1;
@@ -147,18 +172,18 @@ size_t appendStartPkt(uint8_t header[])
 
 size_t appendResponseIdentity(const uint8_t request[])
 {
-	unsigned char username[32] = {0};
-	GetUserName(username);
-	return AppendDrcomResponseIdentity(request, EthHeader, username, send_8021x_data);
+	//unsigned char username[32] = {0};
+	//GetUserName(username);
+	return AppendDrcomResponseIdentity(request, EthHeader, UserName, send_8021x_data);
 }
 
 size_t appendResponseMD5(const uint8_t request[])
 {
-	unsigned char username[32] = {0};
-	GetUserName(username);
-	unsigned char password[32] = {0};
-	GetPassword(password);
-	return AppendDrcomResponseMD5(request, EthHeader, username, password, send_8021x_data);
+	//unsigned char username[32] = {0};
+	//GetUserName(username);
+	//unsigned char password[32] = {0};
+	//GetPassword(password);
+	return AppendDrcomResponseMD5(request, EthHeader, UserName, Password, send_8021x_data);
 }
 
 void sendLogoffPkt()
@@ -173,8 +198,8 @@ void sendLogoffPkt()
 
 void initAuthenticationInfo()
 {
-	uint8_t MAC[6]= {0};
-	GetMacFromDevice(MAC);
+	//uint8_t MAC[6]= {0};
+	//GetMacFromDevice(MAC);
 	
 	memcpy(MultcastHeader, MultcastAddr, 6);
 	memcpy(MultcastHeader+6, MAC, 6);
@@ -196,15 +221,9 @@ void initAuthenticationInfo()
 	EthHeader[13] = 0x8e;
 	
 	// 打印网络信息到前台显示	
-	uint8_t ip[4]= {0};
-	GetWanIpFromDevice(ip);
 	LogWrite(INF,"%s %d.%d.%d.%d","IP :",ip[0],ip[1],ip[2],ip[3]);
-	GetWanNetMaskFromDevice(ip);
-	LogWrite(INF,"%s %d.%d.%d.%d","Netmask :",ip[0],ip[1],ip[2],ip[3]);
-	GetWanGatewayFromDevice(ip);
-	LogWrite(INF,"%s %d.%d.%d.%d","Gateway :",ip[0],ip[1],ip[2],ip[3]);
-	GetWanDnsFromDevice(ip);
-	LogWrite(INF,"%s %d.%d.%d.%d","Dns :",ip[0],ip[1],ip[2],ip[3]);
+	LogWrite(INF,"%s %d.%d.%d.%d","DNS :",dns[0],dns[1],dns[2],dns[3]);
+	LogWrite(INF,"%s %d.%d.%d.%d","udp server :",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
 	LogWrite(INF,"%s %x:%x:%x:%x:%x:%x","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
@@ -361,19 +380,30 @@ int Authentication(int client)
 		exit(EXIT_FAILURE);
 	}
 
+	if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR|SO_BROADCAST,&on,sizeof(on)))<0)  
+	{  
+		perror("udp sock setsockopt failed");  
+		exit(EXIT_FAILURE);  
+	}  
+
+
 	bzero(&serv_addr,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	unsigned char server_ip[16]= {0};
-	GetUdpServerIpAddressFromDevice(server_ip);
-	serv_addr.sin_addr.s_addr = inet_addr(server_ip);
+	//unsigned char server_ip[16]= {0};
+	//GetUdpServerIpAddressFromDevice(server_ip);
+
+	serv_addr.sin_addr.s_addr = inet_addr(udp_server_ipaddr);
 	serv_addr.sin_port = htons(SERVER_PORT);
 
 	bzero(&local_addr,sizeof(local_addr));
 	local_addr.sin_family = AF_INET;
-	unsigned char ip[16]= {0};
-	GetWanIpAddressFromDevice(ip);
-	local_addr.sin_addr.s_addr = inet_addr(ip);
+	//unsigned char ip[16]= {0};
+	//GetWanIpAddressFromDevice(ip);
+
+	local_addr.sin_addr.s_addr = inet_addr(ipaddr);
 	local_addr.sin_port = htons(SERVER_PORT);
+	
+
 
 	bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr));
 	
@@ -470,7 +500,7 @@ int Drcom_UDP_Handler(char *recv_data)
 				// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 					BaseHeartbeatTime = time(NULL);
 					//LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
-					LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")! Waiting for the next heartbeat cycle");
+					LogWrite(INF,"%s%x%s"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")! Waiting for the next heartbeat cycle");
 				break;
 				default:
 					LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")!Error! Unexpected request type!");
