@@ -44,6 +44,8 @@ SCUT Router Group (Audit) on QQ : [262939451](http://jq.qq.com/?_wv=1027&k=2Ezyg
 
 SCUT Router Group on [Sina Weibo](http://weibo.com/u/5148048459)
 
+SCUT Router Podcast on [Telegram](https://t.me/joinchat/AAAAAERy9tE0gUvyTM_GrA)
+
 # Licenses
 
 [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.html)
