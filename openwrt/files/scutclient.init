@@ -13,8 +13,6 @@ auth() {
 	--username $(uci get scutclient.@scutclient[0].username) \
 	--password $(uci get scutclient.@scutclient[0].password) \
 	--iface $(uci get network.wan.ifname) \
-	--mac $(uci get network.wan.macaddr) \
-	--ip $(uci get network.wan.ipaddr) \
 	--dns $(uci get scutclient.@drcom[0].dns) \
 	--hostname $(uci get scutclient.@drcom[0].hostname) \
 	--udp-server $(uci get scutclient.@drcom[0].server_auth_ip) \
