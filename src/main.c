@@ -16,7 +16,7 @@ uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 unsigned char		UserName[32] = {0};
 unsigned char		Password[32] = {0};
-unsigned char		DeviceName[32] = {0};
+unsigned char		DeviceName[IFNAMSIZ] = {0};
 unsigned char		HostName[32] = {0};
 unsigned char		Version[64] = {0};
 int					Version_len = 0;
@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
 		printf("You need to be root\n");
 		exit(-1);
 	}
-
 
 	// see info.h for more about long_options
 	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:o",
