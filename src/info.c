@@ -136,5 +136,40 @@ void transMAC( unsigned char *str, uint8_t MAC[] )
 	}
 }
 
+int GetMacOfDevice(const char *ifn, uint8_t *mac)
+{
+	int fd;
+	struct ifreq ifr;
 
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	bzero(&ifr,sizeof(ifr));
+	strncpy(ifr.ifr_name,ifn, IFNAMSIZ-1);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	if(ioctl(fd, SIOCGIFHWADDR, &ifr) < 0)
+	{
+		fprintf(stderr, "Unable to get MAC address of %s\n", ifn);
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	memcpy(mac, ifr.ifr_hwaddr.sa_data,6);
+	return 0;
+}
 
+int GetIPOfDevice(const char *ifn, uint32_t *pip)
+{
+	int fd;
+	struct ifreq ifr;
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	ifr.ifr_addr.sa_family = AF_INET;
+	strncpy(ifr.ifr_name, ifn, IFNAMSIZ-1);
+	if(ioctl(fd, SIOCGIFADDR, &ifr) < 0)
+	{
+		fprintf(stderr, "Unable to get IP address of %s\n", ifn);
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	*pip = (((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr);
+	return 0;
+}

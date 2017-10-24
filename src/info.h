@@ -6,9 +6,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <arpa/inet.h>
 #include <net/if.h>
+#include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include <getopt.h>
 
@@ -19,8 +22,6 @@ static const struct option long_options[] = {
   {"username",  1, NULL, 'u'},
   {"password",  1, NULL, 'p'},
   {"iface", 	1, NULL, 'f'},
-  {"mac",       1, NULL, 'm'},
-  {"ip",        1, NULL, 'a'},
   {"dns",       1, NULL, 'n'},
   {"hostname",  1, NULL, 't'},
   {"udp-server",1, NULL, 's'},
@@ -37,5 +38,7 @@ static const struct option long_options[] = {
 void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen);
 void transIP( unsigned char *str, uint8_t iphex[] );
 void transMAC( unsigned char *str, uint8_t MAC[] );
+int GetMacOfDevice(const char *ifn, uint8_t *mac);
+int GetIPOfDevice(const char *ifn, uint32_t *pip);
 #endif
 

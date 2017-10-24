@@ -16,7 +16,7 @@ uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 unsigned char		UserName[32] = {0};
 unsigned char		Password[32] = {0};
-unsigned char		DeviceName[IFNAMSIZ] = {0};
+unsigned char		DeviceName[IFNAMSIZ] = "eth0";
 unsigned char		HostName[32] = {0};
 unsigned char		Version[64] = {0};
 int					Version_len = 0;
@@ -61,13 +61,6 @@ int main(int argc, char *argv[])
 		case 'f':
 			strcpy(DeviceName, optarg);
 		break;
-		case 'm':
-			transMAC(optarg, MAC);
-		break;
-		case 'a':
-			strcpy(ipaddr, optarg);
-			transIP(optarg, ip);
-		break;
 		case 'n':
 			transIP(optarg, dns);
 		break;
@@ -91,16 +84,21 @@ int main(int argc, char *argv[])
 		break;
 		default:
 			printf("Usage:\n");
-			printf("scutclient --username USERNAME --password PASSWORD --iface ethX --mac 11:22:33:44:55:66 --ip 123.45.6.78 --dns 222.201.130.30 --hostname DESKTOP-2333333 --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00");
+			printf("scutclient --username USERNAME --password PASSWORD --iface ethX --dns 222.201.130.30 --hostname DESKTOP-2333333 --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00");
 			exit(-1);
 		break;
 		}
 
 	}
-	
+	if(GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0)
+	{
+		exit(-1);
+	}
+	snprintf(ipaddr, sizeof(ipaddr), "%hhd.%hhd.%hhd.%hhd", ip[0], ip[1], ip[2], ip[3]);
+	GetMacOfDevice(DeviceName, MAC);
 	/* 调用子函数完成802.1X认证 */
 	Authentication(client);
 
-	return (0);
+	return 0;
 }
 
