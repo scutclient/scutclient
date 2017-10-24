@@ -57,7 +57,7 @@ int checkInit( uint8_t info[] ,int infoLen )
 	return result;
 }
 
-void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen)  
+void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen)
 {
 	short i;
 	unsigned char highByte, lowByte;
@@ -113,7 +113,7 @@ void transIP( unsigned char *str, uint8_t iphex[] )
 	}
 }
 
-void transMAC( unsigned char *str, uint8_t MAC[] ) 
+void transMAC( unsigned char *str, uint8_t MAC[] )
 {
 	unsigned char *p;
 	int count=0;
