@@ -71,6 +71,7 @@ size_t appendStartPkt(uint8_t header[]);
 size_t appendResponseIdentity(const uint8_t request[]);
 size_t appendResponseMD5(const uint8_t request[]);
 void appendLogoffPkt();
+int Drcom_UDP_Handler(char *recv_data);
 
 int checkWanStatus(int sock)
 {
