@@ -21,15 +21,15 @@ static const struct option long_options[] = {
 	// must be specificed
   {"username",  1, NULL, 'u'},
   {"password",  1, NULL, 'p'},
-  {"iface", 	1, NULL, 'f'},
+  {"iface",     1, NULL, 'f'},
   {"dns",       1, NULL, 'n'},
   {"hostname",  1, NULL, 't'},
   {"udp-server",1, NULL, 's'},
   {"cli-version",1,NULL, 'c'},
   {"hash",      1, NULL, 'h'},
-
 	// logoff
-  {"logoff",    0, NULL, 'o'}
+  {"logoff",    0, NULL, 'o'},
+  {NULL,        0, NULL, 0}
 };
 
 
