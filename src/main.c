@@ -7,24 +7,21 @@
 #include "tracelog.h"
 
 /* \BE\B2̬\B1\E4\C1\BF*/
-uint8_t	udp_server_ip[4] = {0};	// ip address
+uint8_t	udp_server_ip[4] = {202, 38, 210, 131};	// ip address
 uint8_t	ip[4] = {0};	// ip address
-uint8_t	mask[4] = {0};
-uint8_t	gateway[4] = {0};
-uint8_t	dns[4] = {0};
+uint8_t	dns[4] = {222, 201, 130, 30};
 uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 unsigned char		UserName[32] = {0};
 unsigned char		Password[32] = {0};
 unsigned char		DeviceName[IFNAMSIZ] = "eth0";
-unsigned char		HostName[32] = {0};
-unsigned char		Version[64] = {0};
-int					Version_len = 0;
-unsigned char		Hash[64] = {0};
-
+unsigned char		HostName[32] = "DESKTOP-2333333";
+unsigned char		Version[64] = {0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a};
+int					Version_len = 9;
+unsigned char		Hash[64] = {0x2e, 0xc1, 0x5a, 0xd2, 0x58, 0xae, 0xe9, 0x60, 0x4b, 0x18, 0xf2, 0xf8, 0x11, 0x4d, 0xa3, 0x8d, 0xb1, 0x6e, 0xfd, 0x00};
 
 unsigned char		ipaddr[16] = {0};
-unsigned char		udp_server_ipaddr[16] = {0};
+unsigned char		udp_server_ipaddr[16] = "202.38.210.131";
 static unsigned char		Debug[8] = {0};
 
 
