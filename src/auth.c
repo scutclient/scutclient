@@ -557,7 +557,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				// 23是data的偏移量，pkg_len-5是减去eapol头部的data的长度
 				// 在信息的最后补0，方便打印
 				recv_data[23 + pkg_len - 5] = 0;
-				LogWrite(ERROR,"%s%s","Error! Unexpected request type!Server: Request NOTIFICATION! Pls report it. Notification is ", recv_data[23]);
+				LogWrite(INF,"%s%s","Server: Notification: ", recv_data + 23);
 			break;
 			case AVAILABLE:
 				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE! Pls report it.");
