@@ -22,7 +22,7 @@ make
 
 To use it,
 ```bash
-sudo ./scutclient --username USERNAME --password PASSWORD --iface eth1 --mac 00:11:22:33:44:55 --ip 12.34.56.78 --dns 222.201.130.30 --hostname Lenovo-PC --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00
+sudo ./scutclient --username USERNAME --password PASSWORD --iface eth1 --dns 222.201.130.30 --hostname Lenovo-PC --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00
 ```
 
 
