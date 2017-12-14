@@ -314,6 +314,12 @@ int Authentication(int client)
 	// 只接受EAP的包
 	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
 
+	if(auth_8021x_sock < 0)
+	{
+		perror("Unable to create socket");
+		exit(EXIT_FAILURE);
+	}
+
 	if((setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)
 	{
 		perror("setsockopt failed");

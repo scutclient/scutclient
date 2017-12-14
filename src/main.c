@@ -50,12 +50,6 @@ int main(int argc, char *argv[])
 	int ch;
 	uint8_t buf[128];
 
-	/* 检查当前是否具有root权限 */
-	if (getuid() != 0) {
-		printf("You need to be root\n");
-		exit(-1);
-	}
-
 	// see info.h for more about long_options
 	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:oD",
 									long_options, NULL)) != -1) {
