@@ -2,11 +2,7 @@
 #include "tracelog.h"
 #include "info.h"
 
-
-/* \BE\B2̬\B1\E4\C1\BF*/
-
-
-
+/* 静态变量 */
 
 extern uint8_t	udp_server_ip[4];	// ip address
 extern unsigned char udp_server_ipaddr[16];
@@ -21,14 +17,6 @@ extern unsigned char		HostName[32];
 extern unsigned char		Version[64];
 extern int			Version_len ;
 extern unsigned char		Hash[64] ;
-
-
-
-
-
-
-#define LOGOFF  0 // 下线标志位
-#define DRCOM_CLIENT  1 // Drcom客户端标志位
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒

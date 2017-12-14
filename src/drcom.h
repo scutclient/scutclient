@@ -2,7 +2,6 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
-
 size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet );
 size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[], unsigned char *UserName, uint8_t *Packet );
 size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet);

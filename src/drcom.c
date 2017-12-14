@@ -1,8 +1,6 @@
 #include "drcom.h"
 #include "functions.h"
 
-
-
 extern uint8_t	udp_server_ip[4];	// ip address
 extern uint8_t	ip[4];	// ip address
 extern uint8_t	dns[4];
@@ -15,10 +13,8 @@ extern unsigned char		Version[64];
 extern int					Version_len ;
 extern unsigned char		Hash[64] ;
 
-
 extern unsigned char		ipaddr[16];
 extern unsigned char		udp_server_ipaddr;
-
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
@@ -28,8 +24,6 @@ static uint8_t crc_md5_info[16] = {0};
 static int drcom_package_id = 0;  // 包的id，每次自增1
 char drcom_misc1_flux[4];
 char drcom_misc3_flux[4];
-
-
 
 uint32_t checkCPULittleEndian()
 {

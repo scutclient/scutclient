@@ -1,6 +1,6 @@
 /* File: auth.h
  * ------------
- * ×¢£ººËĞÄº¯ÊıÎªAuthentication()£¬ÓÉ¸Ãº¯ÊıÖ´ĞĞ801.1XÈÏÖ¤
+ * æ³¨ï¼šæ ¸å¿ƒå‡½æ•°ä¸ºAuthentication()ï¼Œç”±è¯¥å‡½æ•°æ‰§è¡Œ801.1Xè®¤è¯
  */
 
 #include <stdio.h>
@@ -24,6 +24,8 @@
 #include "info.h"
 #include "drcom.h"
 
+#define LOGOFF 0 // ä¸‹çº¿æ ‡å¿—ä½
+#define DRCOM_CLIENT 1 // Drcomå®¢æˆ·ç«¯æ ‡å¿—ä½
 #define SERVER_ADDR "202.38.210.131"
 #define SERVER_PORT 61440
 

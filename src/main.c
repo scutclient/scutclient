@@ -6,7 +6,6 @@
 #include "info.h"
 #include "tracelog.h"
 
-/* \BE\B2̬\B1\E4\C1\BF*/
 uint8_t DebugMark = 0;
 uint8_t	udp_server_ip[4] = {202, 38, 210, 131};	// ip address
 uint8_t	ip[4] = {0};	// ip address
@@ -23,12 +22,6 @@ unsigned char		Hash[64] = {0x2e, 0xc1, 0x5a, 0xd2, 0x58, 0xae, 0xe9, 0x60, 0x4b,
 
 unsigned char		ipaddr[16] = {0};
 unsigned char		udp_server_ipaddr[16] = "202.38.210.131";
-static unsigned char		Debug[8] = {0};
-
-
-
-const static int LOGOFF = 0; // 下线标志位
-const static int DRCOM_CLIENT = 1; // Drcom客户端标志位
 
 void PrintHelp(const char * argn)
 {
