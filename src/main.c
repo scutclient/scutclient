@@ -16,7 +16,7 @@ uint8_t	MAC[6] = {0};
 unsigned char		UserName[32] = {0};
 unsigned char		Password[32] = {0};
 unsigned char		DeviceName[IFNAMSIZ] = "eth0";
-unsigned char		HostName[32] = "DESKTOP-2333333";
+unsigned char		HostName[32] = {0};
 unsigned char		Version[64] = {0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a};
 int					Version_len = 9;
 unsigned char		Hash[64] = {0x2e, 0xc1, 0x5a, 0xd2, 0x58, 0xae, 0xe9, 0x60, 0x4b, 0x18, 0xf2, 0xf8, 0x11, 0x4d, 0xa3, 0x8d, 0xb1, 0x6e, 0xfd, 0x00};
@@ -89,7 +89,9 @@ int main(int argc, char *argv[])
 			exit(-1);
 		break;
 		}
-
+	}
+	if(HostName[0] == 0) {
+		gethostname(HostName, sizeof(HostName));
 	}
 	if(GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0)
 	{

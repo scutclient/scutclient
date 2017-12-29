@@ -222,6 +222,7 @@ void initAuthenticationInfo()
 	EthHeader[13] = 0x8e;
 
 	// 打印网络信息到前台显示
+	LogWrite(INF,"%s %s","Hostname :",HostName);
 	LogWrite(INF,"%s %d.%d.%d.%d","IP :",ip[0],ip[1],ip[2],ip[3]);
 	LogWrite(INF,"%s %d.%d.%d.%d","DNS :",dns[0],dns[1],dns[2],dns[3]);
 	LogWrite(INF,"%s %d.%d.%d.%d","udp server :",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
