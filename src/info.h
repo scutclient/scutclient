@@ -27,6 +27,7 @@ static const struct option long_options[] = {
   {"udp-server",1, NULL, 's'},
   {"cli-version",1,NULL, 'c'},
   {"hash",      1, NULL, 'h'},
+  {"debug",     0, NULL, 'D'},
 	// logoff
   {"logoff",    0, NULL, 'o'},
   {NULL,        0, NULL, 0}

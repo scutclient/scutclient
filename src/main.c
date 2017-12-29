@@ -7,6 +7,7 @@
 #include "tracelog.h"
 
 /* \BE\B2̬\B1\E4\C1\BF*/
+uint8_t DebugMark = 0;
 uint8_t	udp_server_ip[4] = {202, 38, 210, 131};	// ip address
 uint8_t	ip[4] = {0};	// ip address
 uint8_t	dns[4] = {222, 201, 130, 30};
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 	}
 
 	// see info.h for more about long_options
-	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:o",
+	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:oD",
 									long_options, NULL)) != -1) {
 		switch(ch) {
 		case 'u':
@@ -75,6 +76,9 @@ int main(int argc, char *argv[])
 		break;
 		case 'h':
 			strcpy(Hash, optarg);
+		break;
+		case 'D':
+			DebugMark = 1;
 		break;
 		case 'o':
 			client = LOGOFF;

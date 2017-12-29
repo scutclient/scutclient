@@ -1,12 +1,9 @@
 #include "functions.h"
 #include "md5.h"
-
+extern uint8_t DebugMark;
 void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
 {
-	unsigned char debug[8] = {0};
-	//GetDebugFromDevice(debug);
-	//if(strcmp(debug,"1") == 0)
-	if (0)
+	if (DebugMark)
 	{
 		printf("\n********************Send %s info*********************\n",type);
 		int m,n=0;
