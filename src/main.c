@@ -30,16 +30,26 @@ static unsigned char		Debug[8] = {0};
 const static int LOGOFF = 0; // 下线标志位
 const static int DRCOM_CLIENT = 1; // Drcom客户端标志位
 
+void PrintHelp(const char * argn)
+{
+	printf("Usage: %s --username <username> --password <password> [options...]\n"
+		" -f, --iface <ifname>\n"
+		" -n, --dns <dns>\n"
+		" -t, --hostname <hostname>\n"
+		" -s, --udp-server <server>\n"
+		" -c, --cli-version <client version>\n"
+		" -h, --hash <hash>\n"
+		" -D, --debug\n"
+		" -o, --logoff\n",
+		argn);
+}
 
 int main(int argc, char *argv[])
 {
 	int client = 1;
 	int ch;
 	uint8_t buf[128];
-	LogWrite(INF,"%s","##################################");
-	LogWrite(INF,"%s","Powered by Scutclient Project");
-	LogWrite(INF,"%s","Contact us with QQ group 262939451");
-	LogWrite(INF,"%s","##################################");
+
 	/* 检查当前是否具有root权限 */
 	if (getuid() != 0) {
 		printf("You need to be root\n");
@@ -84,19 +94,26 @@ int main(int argc, char *argv[])
 			client = LOGOFF;
 		break;
 		default:
-			printf("Usage:\n");
-			printf("scutclient --username USERNAME --password PASSWORD --iface ethX --dns 222.201.130.30 --hostname DESKTOP-2333333 --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00");
+			PrintHelp(argv[0]);
 			exit(-1);
 		break;
 		}
 	}
+
+	LogWrite(INF,"%s","##################################");
+	LogWrite(INF,"%s","Powered by Scutclient Project");
+	LogWrite(INF,"%s","Contact us with QQ group 262939451");
+	LogWrite(INF,"%s","##################################");
+
 	if(HostName[0] == 0) {
 		gethostname(HostName, sizeof(HostName));
 	}
+
 	if(GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0)
 	{
 		exit(-1);
 	}
+
 	snprintf(ipaddr, sizeof(ipaddr), "%hhd.%hhd.%hhd.%hhd", ip[0], ip[1], ip[2], ip[3]);
 	GetMacOfDevice(DeviceName, MAC);
 	/* 调用子函数完成802.1X认证 */
