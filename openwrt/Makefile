@@ -8,10 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=scutclient
-ifneq (,$(findstring scutclient,$(shell git remote get-url origin)))
-PKG_VERSION:=$(shell git describe --tags)
+CDIR:=$(shell readlink -f ./)
+ifneq (,$(findstring scutclient,$(shell cd $(CDIR) && git remote get-url origin)))
+PKG_VERSION:=$(shell cd $(CDIR) && git describe --tags)
 PKG_RELEASE:=1
-PKG_UNPACK=$(CP) ../* $(PKG_BUILD_DIR)
+PKG_UNPACK=$(CP) $(CDIR)/../* $(PKG_BUILD_DIR)
 else
 PKG_VERSION:=2.2-20170325
 PKG_RELEASE:=1
