@@ -47,6 +47,7 @@ static int clientHandler = 0; // 判定不同客户端处理的标志位
 static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
+static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
 /* 静态变量*/
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
@@ -449,6 +450,14 @@ int Authentication(int client)
 			auth_UDP_Sender(send_udp_data, send_udp_data_len);
 			// 发送后记下基线时间，开始重新计时心跳时间
 			BaseHeartbeatTime = time(NULL);
+			// 发送 发起心跳的包 的计数
+			client_udp_heartbeat_sent_cnt++;
+			if (client_udp_heartbeat_sent_cnt > 3) {
+				// 认为已经掉线
+				LogWrite(ERROR, "%s%d%s", " UDP_Client: Send ALIVE_HEARTBEAT ", client_udp_heartbeat_sent_cnt, " times, but server has no response.");
+				LogWrite(ERROR, "%s", " Exit.");
+				exit(0);
+			}
 		}
 
 	}
@@ -506,6 +515,7 @@ int Drcom_UDP_Handler(char *recv_data)
 			break;
 			case MISC_RESPONSE_HEART_BEAT:
 				data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data,recv_data);
+				client_udp_heartbeat_sent_cnt = 0;
 				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_HEART_BEAT (step:0x",recv_data[4],")! Send MISC_HEART_BEAT_01, data len = ",data_len);
 			break;
 			default:
