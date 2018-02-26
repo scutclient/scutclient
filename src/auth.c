@@ -48,6 +48,7 @@ static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
 static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
+static const char * auth_8021x_failed_char = "Authentication Fail";	// 8021x认证的时候用来判定服务器发来的字符串是不是代表失败了
 /* 静态变量*/
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
@@ -61,6 +62,7 @@ size_t appendResponseIdentity(const uint8_t request[]);
 size_t appendResponseMD5(const uint8_t request[]);
 void appendLogoffPkt();
 int Drcom_UDP_Handler(char *recv_data);
+void sendLogoffPkt();
 
 int checkWanStatus(int sock)
 {
@@ -330,6 +332,7 @@ int Authentication(int client)
 	if(clientHandler==LOGOFF)
 	{
 		sendLogoffPkt();
+
 		return 0;
 	}
 	//发logoff确保下线
@@ -463,7 +466,7 @@ int Authentication(int client)
 	}
 	close(auth_udp_sock);
 
-	sendLogoffPkt(auth_8021x_sock);
+	sendLogoffPkt();
 	close(auth_8021x_sock);
 	return 1;
 }
@@ -563,6 +566,12 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				// 在信息的最后补0，方便打印
 				recv_data[23 + pkg_len - 5] = 0;
 				LogWrite(INF,"%s%s","Server: Notification: ", recv_data + 23);
+				if ((strlen(auth_8021x_failed_char) < strlen(recv_data+23)) && (0 == strncmp(recv_data+23, auth_8021x_failed_char, strlen(auth_8021x_failed_char)))) {
+					// 这里 可能...会有bug?
+					// 服务器发来了failed就退出
+					LogWrite(ERROR, "%s", "Exit. ");
+					exit(EXIT_FAILURE);
+				}
 			break;
 			case AVAILABLE:
 				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request AVAILABLE! Pls report it.");

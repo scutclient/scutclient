@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 		gethostname(HostName, sizeof(HostName));
 	}
 
-	if(GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0)
+	if((GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0) && (client != LOGOFF))
 	{
 		exit(-1);
 	}
@@ -108,4 +108,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-

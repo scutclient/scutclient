@@ -1,6 +1,7 @@
 #include "info.h"
+#include "tracelog.h"
 
-int trim(char s[])  
+int trim(char s[])
 {
 	int n;
 	for(n = strlen(s) - 1; n >= 0; n--)
@@ -126,7 +127,7 @@ int GetMacOfDevice(const char *ifn, uint8_t *mac)
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	if(ioctl(fd, SIOCGIFHWADDR, &ifr) < 0)
 	{
-		fprintf(stderr, "Unable to get MAC address of %s\n", ifn);
+		LogWrite(ERROR,"%s%s","Unable to get MAC address of ", ifn);
 		close(fd);
 		return -1;
 	}
@@ -144,7 +145,7 @@ int GetIPOfDevice(const char *ifn, uint32_t *pip)
 	strncpy(ifr.ifr_name, ifn, IFNAMSIZ-1);
 	if(ioctl(fd, SIOCGIFADDR, &ifr) < 0)
 	{
-		fprintf(stderr, "Unable to get IP address of %s\n", ifn);
+		LogWrite(ERROR,"%s%s","Unable to get IP address of ", ifn);
 		close(fd);
 		return -1;
 	}
