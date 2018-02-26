@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2016-2018 SCUT Router Term
 #
 # This is free software, licensed under the GNU Affero General Public License v3.
@@ -53,8 +53,6 @@ define Package/scutclient/install
 	$(INSTALL_DATA) ./files/scutclient.config $(1)/etc/config/scutclient
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/scutclient.init $(1)/etc/init.d/scutclient
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_BIN) ./files/scutclient.hotplug $(1)/etc/hotplug.d/iface/95-scutclient
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scutclient $(1)/usr/bin
 endef

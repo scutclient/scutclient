@@ -1,40 +1,38 @@
-#!/bin/sh /etc/rc.common	
-	
-START=99	
-STOP=15	
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=15
+USE_PROCD=1
+
+SCUTCLIENT_PATH=/usr/bin/scutclient
+SCUTCLIENT_CONFIG=scutclient
 
 EXTRA_COMMANDS="logoff"
 EXTRA_HELP=<<EOF
 	logoff	Log off manually
 EOF
 
-auth() {	
-	scutclient \
-	--username $(uci get scutclient.@scutclient[0].username) \
-	--password $(uci get scutclient.@scutclient[0].password) \
-	--iface $(uci get network.wan.ifname) \
-	--dns $(uci get scutclient.@drcom[0].dns) \
-	--hostname $(uci get scutclient.@drcom[0].hostname) \
-	--udp-server $(uci get scutclient.@drcom[0].server_auth_ip) \
-	--cli-version $(uci get scutclient.@drcom[0].version) \
-	--hash $(uci get scutclient.@drcom[0].hash) &
+service_triggers() {
+	procd_add_reload_trigger "$SCUTCLIENT_CONFIG"
 }
 
-logoff() {
-	scutclient --iface $(uci get network.wan.ifname) logoff
+start_service() {
+	  [ $(uci get scutclient.@option[0].enable) -eq 0 ] && exit
+		procd_open_instance
+		procd_set_param command "$SCUTCLIENT_PATH"
+		procd_append_param command 	--username $(uci get scutclient.@scutclient[0].username) \
+			--password $(uci get scutclient.@scutclient[0].password) \
+			--iface $(uci get network.wan.ifname) \
+			--dns $(uci get scutclient.@drcom[0].dns) \
+			--hostname $(uci get scutclient.@drcom[0].hostname) \
+			--udp-server $(uci get scutclient.@drcom[0].server_auth_ip) \
+			--cli-version $(uci get scutclient.@drcom[0].version) \
+			--hash $(uci get scutclient.@drcom[0].hash)
+		procd_set_param respawn ${respawn_threshold:-864000} ${respawn_timeout:-5} ${respawn_retry:-5}
+		[ $(uci get scutclient.@option[0].plugin_redial) -eq 1 ] && procd_add_interface_trigger "interface.*" $(uci get network.wan.ifname) /etc/init.d/scutclient restart
+		procd_close_instance
 }
 
-boot() {
-	[ $(uci get scutclient.@option[0].enable) -eq 0 ] && exit
-	sleep $(uci get scutclient.@drcom[0].delay)
-	auth
+stop_service() {
+	$SCUTCLIENT_PATH --iface $(uci get network.wan.ifname) --logoff
 }
-
-start() {
-	auth
-}
-
-stop() {
-	killall scutclient
-}
-	
