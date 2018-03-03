@@ -12,27 +12,72 @@ EXTRA_HELP=<<EOF
 	logoff	Log off manually
 EOF
 
+scutclient_validate_drcom() {
+	uci_validate_section scutclient drcom "${1}" \
+		'dns:ip4addr:222.201.130.30' \
+		'hostname:string:Lenovo-PC' \
+		'server_auth_ip:ip4addr:202.38.210.131' \
+		'version:string:4472434f4d0096022a' \
+		'hash:string:2ec15ad258aee9604b18f2f8114da38db16efd00' || exit 1
+}
+
+scutclient_validate_scutclient() {
+	uci_validate_section scutclient scutclient "${1}" \
+		'username:string' \
+		'password:string' || exit 1
+}
+
+scutclient_validate_option() {
+	uci_validate_section scutclient option "${1}" \
+		'enable:bool:0' \
+		'debug:bool:0' \
+		'plugin_redial:bool:1' || exit 1
+}
+
+scutclient_load_config() {
+	config_load scutclient
+	config_foreach scutclient_validate_option option
+	config_foreach scutclient_validate_scutclient scutclient
+	config_foreach scutclient_validate_drcom drcom
+	uci_validate_section network interface wan 'ifname:string' || exit 1
+}
+
 service_triggers() {
 	procd_add_reload_trigger "$SCUTCLIENT_CONFIG"
+	procd_open_validate
+	scutclient_validate_option
+	scutclient_validate_scutclient
+	scutclient_validate_drcom
+	procd_close_validate
 }
 
 start_service() {
-	  [ $(uci get scutclient.@option[0].enable) -eq 0 ] && exit
-		procd_open_instance
-		procd_set_param command "$SCUTCLIENT_PATH"
-		procd_append_param command 	--username $(uci get scutclient.@scutclient[0].username) \
-			--password $(uci get scutclient.@scutclient[0].password) \
-			--iface $(uci get network.wan.ifname) \
-			--dns $(uci get scutclient.@drcom[0].dns) \
-			--hostname $(uci get scutclient.@drcom[0].hostname) \
-			--udp-server $(uci get scutclient.@drcom[0].server_auth_ip) \
-			--cli-version $(uci get scutclient.@drcom[0].version) \
-			--hash $(uci get scutclient.@drcom[0].hash)
-		procd_set_param respawn ${respawn_threshold:-864000} ${respawn_timeout:-5} ${respawn_retry:-5}
-		[ $(uci get scutclient.@option[0].plugin_redial) -eq 1 ] && procd_add_interface_trigger "interface.*" $(uci get network.wan.ifname) /etc/init.d/scutclient restart
-		procd_close_instance
+	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname
+	scutclient_load_config
+	[ $enable -eq 0 ] && exit
+	procd_open_instance
+	procd_set_param command "$SCUTCLIENT_PATH"
+	procd_append_param command --username "$username" \
+		--password "$password" \
+		--iface "$ifname" \
+		--dns "$dns" \
+		--hostname "$hostname" \
+		--udp-server "$server_auth_ip" \
+		--cli-version "$version" \
+		--hash "$hash"
+	[ "$debug" -ge 1 ] && procd_append_param command --debug
+	procd_set_param respawn
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	[ "$plugin_redial" -eq 1 ] && {
+		procd_set_param netdev $ifname
+		procd_add_interface_trigger "interface.*" $ifname /etc/init.d/scutclient restart
+	}
+	procd_close_instance
 }
 
 stop_service() {
-	$SCUTCLIENT_PATH --iface $(uci get network.wan.ifname) --logoff
+	local ifname
+	uci_validate_section network interface wan 'ifname:string'
+	$SCUTCLIENT_PATH --iface $ifname --logoff
 }
