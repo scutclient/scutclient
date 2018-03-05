@@ -10,13 +10,10 @@ extern uint8_t	ip[4];	// ip address
 extern unsigned char		ipaddr[16];
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
-extern unsigned char		UserName[32];
-extern unsigned char		Password[32];
-extern unsigned char		DeviceName[32];
+extern const char *UserName;
+extern const char *Password;
+extern char DeviceName[IFNAMSIZ];
 extern unsigned char		HostName[32];
-extern unsigned char		Version[64];
-extern int			Version_len ;
-extern unsigned char		Hash[64] ;
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
@@ -60,7 +57,6 @@ void auth_8021x_Handler(uint8_t recv_data[]);
 size_t appendStartPkt(uint8_t header[]);
 size_t appendResponseIdentity(const uint8_t request[]);
 size_t appendResponseMD5(const uint8_t request[]);
-void appendLogoffPkt();
 int Drcom_UDP_Handler(char *recv_data);
 void sendLogoffPkt();
 
