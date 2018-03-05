@@ -45,7 +45,12 @@ static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
 static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
-static const char * auth_8021x_failed_char = "Authentication Fail";	// 8021x认证的时候用来判定服务器发来的字符串是不是代表失败了
+// 802.1X 交换机认证失败返回字符串
+static const char * auth_8021x_failed_strs[] = {
+		"Authentication Fail",
+		"userid error",
+		NULL
+};
 /* 静态变量*/
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
@@ -539,6 +544,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 
 	// 带eapol头的总长度
 	uint16_t pkg_len = 0;
+	uint8_t i;
 	memcpy(&pkg_len, recv_data + 20, sizeof(pkg_len));
 	pkg_len = htons(pkg_len);
 
@@ -562,11 +568,13 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				// 在信息的最后补0，方便打印
 				recv_data[23 + pkg_len - 5] = 0;
 				LogWrite(INF,"%s%s","Server: Notification: ", recv_data + 23);
-				if ((strlen(auth_8021x_failed_char) < strlen(recv_data+23)) && (0 == strncmp(recv_data+23, auth_8021x_failed_char, strlen(auth_8021x_failed_char)))) {
-					// 这里 可能...会有bug?
-					// 服务器发来了failed就退出
-					LogWrite(ERROR, "%s", "Exit. ");
-					exit(EXIT_FAILURE);
+				for(i = 0; auth_8021x_failed_strs[i]; i++)
+				{
+					if(!strncmp(auth_8021x_failed_strs[i], (char*)(recv_data + 23), strlen(auth_8021x_failed_strs[i])))
+					{
+						LogWrite(ERROR,"%s","Authentication failed! Exit.");
+						exit(EXIT_FAILURE);
+					}
 				}
 			break;
 			case AVAILABLE:
