@@ -24,7 +24,8 @@ scutclient_validate_drcom() {
 scutclient_validate_scutclient() {
 	uci_validate_section scutclient scutclient "${1}" \
 		'username:string' \
-		'password:string' || exit 1
+		'password:string' \
+		'interface:string:wan' || exit 1
 }
 
 scutclient_validate_option() {
@@ -37,35 +38,15 @@ scutclient_validate_option() {
 scutclient_load_config() {
 	config_load scutclient
 	config_foreach scutclient_validate_option option
-	config_foreach scutclient_validate_scutclient scutclient
 	config_foreach scutclient_validate_drcom drcom
-	uci_validate_section network interface wan 'ifname:string' || exit 1
 }
 
-service_triggers() {
-	local enable debug plugin_redial
-	config_load scutclient
-	config_foreach scutclient_validate_option option
-	[ "$plugin_redial" -eq 1 ] && {
-		procd_add_interface_trigger "interface.*" wan /etc/init.d/scutclient restart
-		#wan force_link is enabled by default when configured as static IP, which won't trigger hotplug events.
-		#Add wan6 and dhcp here as a backup.
-		procd_add_interface_trigger "interface.*" wan6 /etc/init.d/scutclient restart
-		procd_add_reload_trigger "dhcp"
-	}
-	procd_add_reload_trigger "$SCUTCLIENT_CONFIG"
-	procd_open_validate
-	scutclient_validate_option
-	scutclient_validate_scutclient
-	scutclient_validate_drcom
-	procd_close_validate
-}
-
-start_service() {
-	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname
-	scutclient_load_config
-	[ $enable -eq 0 ] && exit
-	procd_open_instance
+scutclient_start_instance() {
+	local cfg="$1"
+	local username password interface ifname
+	scutclient_validate_scutclient "$cfg"
+	uci_validate_section network interface "$interface" 'ifname:string'
+	procd_open_instance "scutclient_${cfg}_${interface}"
 	procd_set_param command "$SCUTCLIENT_PATH"
 	procd_append_param command --username "$username" \
 		--password "$password" \
@@ -85,10 +66,50 @@ start_service() {
 	procd_close_instance
 }
 
-stop_service() {
-	local ifname
-	uci_validate_section network interface wan 'ifname:string'
+scutclient_add_triggers() {
+	local cfg="$1"
+	local username password interface
+	scutclient_validate_scutclient "$cfg"
+	procd_add_interface_trigger "interface.*" $interface /etc/init.d/scutclient restart
+}
+
+scutclient_logoff() {
+	local cfg="$1"
+	local username password interface ifname
+	scutclient_validate_scutclient "$cfg"
+	uci_validate_section network interface "$interface" 'ifname:string'
 	$SCUTCLIENT_PATH --iface $ifname --logoff
+}
+
+service_triggers() {
+	local enable debug plugin_redial
+	config_load scutclient
+	config_foreach scutclient_validate_option option
+	[ "$plugin_redial" -eq 1 ] && {
+		config_foreach scutclient_add_triggers scutclient
+		#wan force_link is enabled by default when configured as static IP, which won't trigger hotplug events.
+		#Add wan6 and dhcp here as a backup.
+		procd_add_interface_trigger "interface.*" wan6 /etc/init.d/scutclient restart
+		procd_add_reload_trigger "dhcp"
+	}
+	procd_add_reload_trigger "$SCUTCLIENT_CONFIG"
+	procd_open_validate
+	scutclient_validate_option
+	scutclient_validate_scutclient
+	scutclient_validate_drcom
+	procd_close_validate
+}
+
+start_service() {
+	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname
+	scutclient_load_config
+	[ $enable -eq 0 ] && exit
+	config_foreach scutclient_start_instance scutclient
+}
+
+stop_service() {
+	config_load scutclient
+	config_foreach scutclient_logoff scutclient
 }
 
 reload_service() {
