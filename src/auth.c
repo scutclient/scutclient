@@ -401,7 +401,12 @@ int Authentication(int client)
 	local_addr.sin_addr.s_addr = local_ipaddr.s_addr;
 	local_addr.sin_port = htons(SERVER_PORT);
 
-	bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr));
+	if(bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr)) < 0)
+	{
+		LogWrite(ERROR, "%s", "Unable to bind to UDP socket.");
+		perror("Unable to bind to UDP socket");
+		exit(EXIT_FAILURE);
+	}
 
 	loginToGetServerMAC(recv_8021x_buf);
 	// 计时心跳时间
