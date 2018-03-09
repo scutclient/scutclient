@@ -1,7 +1,7 @@
 #include "drcom.h"
 #include "functions.h"
 
-extern uint8_t	ip[4];	// ip address
+extern struct in_addr local_ipaddr;
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
 extern const char *UserName;
@@ -122,7 +122,7 @@ size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[],
 	Packet[packetlen++] = 0x0;
 	//uint8_t ip[4]= {0};
 	//GetWanIpFromDevice(ip);
-	memcpy(Packet+packetlen, ip, 4);
+	memcpy(Packet+packetlen, (char *)(&local_ipaddr.s_addr), 4);
 	packetlen += 4;
 	if(packetlen < 96)
 	{
@@ -173,7 +173,7 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 	Packet[packetlen++]= 0x0;
 	//uint8_t ip[4]= {0};
 	//GetWanIpFromDevice(ip);
-	memcpy(Packet+packetlen, ip, 4);  // 填充ip
+	memcpy(Packet+packetlen, (char *)(&local_ipaddr.s_addr), 4);  // 填充ip
 	packetlen += 4;
 	// 补填前面留空的两处Length
 	eaplen = htons(userlen+31);
@@ -243,7 +243,7 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	// 填ip
 	//uint8_t ip[4]= {0};
 	//GetWanIpFromDevice(ip);
-	memcpy(send_data+packetlen, ip, 4);
+	memcpy(send_data+packetlen, (char *)(&local_ipaddr.s_addr), 4);
 	packetlen += 4;
 	
 	send_data[packetlen++] = 0x02;
@@ -390,9 +390,8 @@ int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_da
 	send_data[packetlen++] = 0x00;
 	
 	memcpy(send_data + 16, drcom_misc3_flux, 4);
-	//uint8_t ip[4]= {0};
-	//GetWanIpFromDevice(ip);
-	memcpy(send_data + 28, ip, 4);
+
+	memcpy(send_data + 28, (char *)(&local_ipaddr.s_addr), 4);
 	packetlen = 40;
 
 	return packetlen;

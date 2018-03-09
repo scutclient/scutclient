@@ -136,7 +136,7 @@ int GetMacOfDevice(const char *ifn, uint8_t *mac)
 	return 0;
 }
 
-int GetIPOfDevice(const char *ifn, uint32_t *pip)
+int GetIPOfDevice(const char *ifn, in_addr_t *pip)
 {
 	int fd;
 	struct ifreq ifr;

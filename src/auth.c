@@ -6,8 +6,7 @@
 
 extern uint8_t	udp_server_ip[4];	// ip address
 extern unsigned char udp_server_ipaddr[16];
-extern uint8_t	ip[4];	// ip address
-extern unsigned char		ipaddr[16];
+extern struct in_addr local_ipaddr;
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
 extern const char *UserName;
@@ -215,7 +214,7 @@ void initAuthenticationInfo()
 
 	// 打印网络信息到前台显示
 	LogWrite(INF,"%s %s","Hostname :",HostName);
-	LogWrite(INF,"%s %d.%d.%d.%d","IP :",ip[0],ip[1],ip[2],ip[3]);
+	LogWrite(INF,"%s %s","IP :", inet_ntoa(local_ipaddr));
 	LogWrite(INF,"%s %d.%d.%d.%d","DNS :",dns[0],dns[1],dns[2],dns[3]);
 	LogWrite(INF,"%s %d.%d.%d.%d","udp server :",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
 	LogWrite(INF,"%s %x:%x:%x:%x:%x:%x","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
@@ -398,13 +397,9 @@ int Authentication(int client)
 
 	bzero(&local_addr,sizeof(local_addr));
 	local_addr.sin_family = AF_INET;
-	//unsigned char ip[16]= {0};
-	//GetWanIpAddressFromDevice(ip);
 
-	local_addr.sin_addr.s_addr = inet_addr(ipaddr);
+	local_addr.sin_addr.s_addr = local_ipaddr.s_addr;
 	local_addr.sin_port = htons(SERVER_PORT);
-
-
 
 	bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr));
 

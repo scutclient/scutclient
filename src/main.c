@@ -7,8 +7,8 @@
 #include "tracelog.h"
 
 uint8_t DebugMark = 0;
+struct in_addr local_ipaddr;
 uint8_t	udp_server_ip[4] = {202, 38, 210, 131};	// ip address
-uint8_t	ip[4] = {0};	// ip address
 uint8_t	dns[4] = {222, 201, 130, 30};
 uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
@@ -20,7 +20,6 @@ unsigned char		Version[64] = {0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x
 int					Version_len = 9;
 unsigned char		Hash[64] = {0x2e, 0xc1, 0x5a, 0xd2, 0x58, 0xae, 0xe9, 0x60, 0x4b, 0x18, 0xf2, 0xf8, 0x11, 0x4d, 0xa3, 0x8d, 0xb1, 0x6e, 0xfd, 0x00};
 
-unsigned char		ipaddr[16] = {0};
 unsigned char		udp_server_ipaddr[16] = "202.38.210.131";
 
 void PrintHelp(const char * argn)
@@ -97,7 +96,7 @@ int main(int argc, char *argv[])
 
 	if (client != LOGOFF)
 	{
-		if(GetIPOfDevice(DeviceName, (uint32_t*)ip) < 0)
+		if(GetIPOfDevice(DeviceName, &(local_ipaddr.s_addr)) < 0)
 			exit(-1);
 		if(!(UserName && Password && UserName[0] && Password[0]))
 		{
@@ -106,7 +105,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	snprintf(ipaddr, sizeof(ipaddr), "%hhd.%hhd.%hhd.%hhd", ip[0], ip[1], ip[2], ip[3]);
 	GetMacOfDevice(DeviceName, MAC);
 	/* 调用子函数完成802.1X认证 */
 	Authentication(client);
