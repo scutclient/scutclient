@@ -9,8 +9,8 @@ extern unsigned char udp_server_ipaddr[16];
 extern struct in_addr local_ipaddr;
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
-extern const char *UserName;
-extern const char *Password;
+extern char *UserName;
+extern char *Password;
 extern char DeviceName[IFNAMSIZ];
 extern unsigned char		HostName[32];
 

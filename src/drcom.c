@@ -4,7 +4,7 @@
 extern struct in_addr local_ipaddr;
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
-extern const char *UserName;
+extern char *UserName;
 
 extern unsigned char		HostName[32];
 extern unsigned char		Version[64];
