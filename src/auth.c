@@ -119,6 +119,7 @@ int auth_UDP_Receiver(char *recv_data)
 	&& memcmp(&clntaddr.sin_addr, &serv_addr.sin_addr, 4) == 0
 	&& ( (recv_data[0]==0x07 ) || ((recv_data[0]==0x4d) && (recv_data[1]==0x38)) )   )		// server information is started with 0x4d38
 	{
+		PrintHex("UDP packet received", recv_data, recv_len);
 		return 1;
 	}
 	return 0;
@@ -148,6 +149,7 @@ int auth_8021x_Receiver(char *recv_data)
 	&& (0 == memcmp(recv_hdr->h_dest, local_ethhdr->h_source, ETH_ALEN))
 	&& (htons(ETH_P_PAE) ==  recv_hdr->h_proto) )
 	{
+		PrintHex("802.1X packet received", recv_data, recv_len);
 		return 1;
 	}
 	return 0;

@@ -1,6 +1,9 @@
 #include "tracelog.h"
 // 默认日志最大100KB大小
 #define MAXFILELEN 102400
+LOGSET logsetting;
+LOG loging;
+const static char *LogLevelText[5]={"ERROR","INF","UNKNOWN","DEBUG","ALL"};
 
 static unsigned char getcode(char *path)
 {

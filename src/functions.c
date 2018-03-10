@@ -1,24 +1,47 @@
+#include <ctype.h>
 #include "functions.h"
+#include "tracelog.h"
 #include "md5.h"
 extern uint8_t DebugMark;
-void PrintDebugInfo(char *type, uint8_t info[], size_t packetlen)
+static char hexret[50];
+static char strret[20];
+
+char* GenHexStr(uint8_t *content, size_t len)
 {
-	if (DebugMark)
+	uint8_t curcnt;
+	hexret[0] = 0;
+	for(curcnt = 0;(curcnt < len) && (curcnt < 8);curcnt++)
+		sprintf(hexret + (curcnt * 3), "%02hhx ", content[curcnt]);
+	hexret[24] = ' ';
+	hexret[25] = 0; // In case len = 8
+	for(;(curcnt < len) && (curcnt < 16);curcnt++)
+		sprintf(hexret + (curcnt * 3) + 1, "%02hhx ", content[curcnt]);
+	return hexret;
+}
+
+char* GenChrStr(uint8_t *content, size_t len)
+{
+	uint8_t curcnt;
+	strret[0] = 0;
+	for(curcnt = 0;(curcnt < len) && (curcnt < 16);curcnt++)
+		strret[curcnt] = (isprint(content[curcnt]) ? content[curcnt] : '.');
+	strret[curcnt] = 0;
+	return strret;
+}
+
+void PrintHex(char *descr, uint8_t *content, size_t len)
+{
+	size_t cptr;
+	if(!DebugMark) return;
+	LogWrite(DEBUG, "%s: Packet length: %lu bytes.", descr, len);
+	LogWrite(DEBUG, "******************************************************************************");
+	for(cptr = 0;cptr < len;cptr+=16)
 	{
-		printf("\n********************Send %s info*********************\n",type);
-		int m,n=0;
-		for(m=0;m<=packetlen-1;m++)
-		{
-			n++;
-			if(n==17)
-			{
-				printf("\n");
-				n=1;
-			}
-			printf("%02x ",info[m]);
-		}
-		printf("\n");
+		LogWrite(DEBUG, "%08x %-49s  |%-16s|", cptr,
+				GenHexStr(content + cptr, len - cptr),
+				GenChrStr(content + cptr, len - cptr));
 	}
+	LogWrite(DEBUG, "******************************************************************************");
 }
 
 void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[], const uint8_t srcMD5[])

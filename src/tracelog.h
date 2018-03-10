@@ -48,9 +48,7 @@ typedef struct logseting
 int LogWrite(unsigned char loglevel,char *fromat,...);
 #endif /* LOGC_H_ */
 #define MAXLEVELNUM (2)
- 
-LOGSET logsetting;
-LOG loging;
- 
-const static char LogLevelText[4][10]={"ERROR","INF","DEBUG","ALL"};
- 
+
+extern LOGSET logsetting;
+extern LOG loging;
+

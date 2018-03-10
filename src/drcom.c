@@ -89,7 +89,7 @@ size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 	Packet[17] = 0x00;
 	packetlen=96;
 
-	PrintDebugInfo(	"Start", Packet, packetlen);
+	PrintHex("Send Start packet", Packet, packetlen);
 
 	return packetlen;
 }
@@ -134,7 +134,7 @@ size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[],
 	eaplen = htons(userlen+14);
 	memcpy(Packet+20, &eaplen, sizeof(eaplen));
 	
-	PrintDebugInfo(	"Identity", Packet, packetlen);
+	PrintHex("Send Identity", Packet, packetlen);
 
 	return packetlen;
 }
@@ -186,7 +186,7 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 		packetlen = 96;
 	}
 
-	PrintDebugInfo(	"MD5", Packet, packetlen);
+	PrintHex("Send MD5", Packet, packetlen);
 
 	return packetlen;
 }
@@ -204,7 +204,7 @@ size_t AppendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
 	Packet[17] = 0x00;
 	packetlen=96;
 
-	PrintDebugInfo(	"Logoff", Packet, packetlen);
+	PrintHex("Send Logoff", Packet, packetlen);
 
 	return packetlen;
 }
