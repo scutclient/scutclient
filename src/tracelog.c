@@ -58,52 +58,7 @@ static void settime()
 	time_t timer=time(NULL);
 	strftime(loging.logtime,20,"%Y-%m-%d %H:%M:%S",localtime(&timer));
 }
- 
-/*
- *不定参打印
- * */
-static void PrintfLog(char * fromat,va_list args)
-{
-	int d,x;
-	char c,*s;
-	while(*fromat)
-	{
-		switch(*fromat)
-		{
-			case 's':
-				s = va_arg(args, char *);
-				fprintf(loging.logfile,"%s",s);
-				printf("%s",s);
-			break;
-			case 'd':
-				d = va_arg(args, int);
-				fprintf(loging.logfile,"%d",d);
-				printf("%d",d);
-			break;
-			case 'c':
-				c = (char)va_arg(args, int);
-				fprintf(loging.logfile,"%c",c);
-				printf("%c",c);
-			break;
-			case 'x':
-				x = (unsigned char)va_arg(args,int);
-				fprintf(loging.logfile,"%02x",x);
-				printf("%02x",x);
-			break;
-			default:
-				if(*fromat!='%'&&*fromat!='\n')
-				{
-					fprintf(loging.logfile,"%c",*fromat);
-					printf("%c",*fromat);
-				}
-			break;
-		}
-		fromat++;
-	}
-	fprintf(loging.logfile,"%s","]\n");
-	printf("%s","]\n");
-}
- 
+
 static int initlog(unsigned char loglevel)
 {
 	LOGSET *logsetting;
@@ -157,16 +112,21 @@ static int initlog(unsigned char loglevel)
 /*
  *日志写入
  * */
-int LogWrite(unsigned char loglevel,char *fromat,...)
+int LogWrite(unsigned char loglevel,char *format,...)
 {
 	va_list args;
 	//初始化日志
 	if(initlog(loglevel)!=0)
 		return -1;
 	//打印日志信息
-	va_start(args,fromat);
-	PrintfLog(fromat,args);
+	va_start(args,format);
+	vfprintf(loging.logfile,format,args);
 	va_end(args);
+	va_start(args,format);
+	vprintf(format,args);
+	va_end(args);
+	fprintf(loging.logfile,"]\n");
+	printf("]\n");
 	//文件刷出
 	fflush(loging.logfile);
 	//日志关闭
