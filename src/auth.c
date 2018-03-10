@@ -73,25 +73,22 @@ int checkWanStatus(int sock)
 	strcpy(ifr.ifr_name,DeviceName);
 	if(ioctl(sock, SIOCGIFFLAGS, &ifr) < 0)
 	{
-		LogWrite(ERROR,"%s","ioctl get if_flag error.");
-		perror("ioctl get if_flag error");
+		LogWrite(ERROR,"ioctl get if_flag error: %s", strerror(errno));
 		return 0;
 	}
 	if(ifr.ifr_ifru.ifru_flags & IFF_RUNNING )
 	{
-		LogWrite(INF,"%s","WAN had linked up.");
+		LogWrite(INF,"%s","WAN link up.");
 	}
 	else
 	{
-		LogWrite(ERROR,"%s","WAN had linked down. Please do check it.");
-		perror("WAN had linked down. Please do check it.");
+		LogWrite(ERROR,"%s","WAN link down. Please check it.");
 		return 0;
 	}
 	//获取接口索引
 	if(ioctl(sock,SIOCGIFINDEX,&ifr) < 0)
 	{
-		LogWrite(ERROR,"%s","Get WAN index error.");
-		perror("Get WAN index error.");
+		LogWrite(ERROR,"Get WAN index error: %s", strerror(errno));
 		return 0;
 	}
 	bzero(&auth_8021x_addr,sizeof(auth_8021x_addr));
@@ -107,8 +104,7 @@ int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len)
 	{
 		//ret不等于send_data长度报错
-		LogWrite(ERROR,"%s","auth_UDP_Sender error.6666666666");
-		perror("auth_UDP_Sender error23333333");
+		LogWrite(ERROR,"auth_UDP_Sender error: %s", strerror(errno));
 		return 0;
 	}
 	return 1;
@@ -217,7 +213,7 @@ void initAuthenticationInfo()
 	LogWrite(INF,"%s %s","IP :", inet_ntoa(local_ipaddr));
 	LogWrite(INF,"%s %d.%d.%d.%d","DNS :",dns[0],dns[1],dns[2],dns[3]);
 	LogWrite(INF,"%s %d.%d.%d.%d","udp server :",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
-	LogWrite(INF,"%s %x:%x:%x:%x:%x:%x","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
+	LogWrite(INF,"%s %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
 void loginToGetServerMAC(uint8_t recv_data[])
@@ -307,13 +303,13 @@ int Authentication(int client)
 
 	if(auth_8021x_sock < 0)
 	{
-		perror("Unable to create socket");
+		LogWrite(ERROR,"802.1X: Unable to create raw socket: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if((setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)
 	{
-		perror("setsockopt failed");
+		LogWrite(ERROR,"802.1X: setsockopt failed: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -321,7 +317,6 @@ int Authentication(int client)
 	if(result == 0)
 	{
 		LogWrite(ERROR,"%s","Client exit.");
-		perror("Client Exit!");
 		close(auth_8021x_sock);
 		exit(EXIT_FAILURE);
 	}
@@ -348,8 +343,7 @@ int Authentication(int client)
 		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout))
 		{
 			case -1:
-				LogWrite(ERROR,"%s","first select socket failed.");
-				perror("first select socket failed.");
+				LogWrite(ERROR,"first select socket failed: %s", strerror(errno));
 			break;
 			case 0:
 				LogWrite(INF,"%s","first socket select time out.");
@@ -374,15 +368,13 @@ int Authentication(int client)
 	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (auth_udp_sock < 0)
 	{
-		//auth_udp_sock<0即错误
-		LogWrite(ERROR,"%s","Create auth_udp_sock failed.");
-		perror("Create auth_udp_sock failed.");
+		LogWrite(ERROR, "Create UDP socket failed: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR|SO_BROADCAST,&on,sizeof(on)))<0)
 	{
-		perror("udp sock setsockopt failed");
+		LogWrite(ERROR, "UDP setsockopt failed: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -403,8 +395,7 @@ int Authentication(int client)
 
 	if(bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr)) < 0)
 	{
-		LogWrite(ERROR, "%s", "Unable to bind to UDP socket.");
-		perror("Unable to bind to UDP socket");
+		LogWrite(ERROR, "Unable to bind to UDP socket: %s", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -420,8 +411,7 @@ int Authentication(int client)
 		switch (select(auth_8021x_sock + auth_udp_sock + 1, &fdR, NULL, NULL, &tmp_timeout))
 		{
 			case -1:
-				LogWrite(ERROR,"%s","select socket failed.");
-				perror("select socket failed.");
+				LogWrite(ERROR,"select socket failed: %s", strerror(errno));
 			break;
 			case 0:
 			break;
@@ -450,7 +440,7 @@ int Authentication(int client)
 		if(success_8021x && isNeedHeartBeat && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
 		{
 			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,recv_udp_data);
-			LogWrite(INF,"%s%d"," UDP_Client: Send ALIVE_HEARTBEAT, data len = ",send_udp_data_len);
+			LogWrite(INF,"%s%d","UDP Client: Send ALIVE_HEARTBEAT, data len = ",send_udp_data_len);
 			auth_UDP_Sender(send_udp_data, send_udp_data_len);
 			// 发送后记下基线时间，开始重新计时心跳时间
 			BaseHeartbeatTime = time(NULL);
@@ -458,7 +448,7 @@ int Authentication(int client)
 			client_udp_heartbeat_sent_cnt++;
 			if (client_udp_heartbeat_sent_cnt > 3) {
 				// 认为已经掉线
-				LogWrite(ERROR, "%s%d%s", " UDP_Client: Send ALIVE_HEARTBEAT ", client_udp_heartbeat_sent_cnt, " times, but server has no response.");
+				LogWrite(ERROR,"UDP Client: Send ALIVE_HEARTBEAT %d times, but server has no response.", client_udp_heartbeat_sent_cnt);
 				LogWrite(ERROR, "%s", " Exit.");
 				exit(0);
 			}
@@ -485,7 +475,7 @@ int Drcom_UDP_Handler(char *recv_data)
 				// 一秒后才回复
 				sleep(1);
 				data_len = Drcom_MISC_INFO_Setter(send_udp_data,recv_data);
-				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_FOR_ALIVE (step:0x",recv_data[4],")! Send MISC_INFO, data len = ",data_len);
+				LogWrite(INF, "UDP Server: MISC_RESPONSE_FOR_ALIVE (step:0x%02hhx) Send MISC_INFO, data len = %d", recv_data[4], data_len);
 			break;
 			case MISC_RESPONSE_INFO:
 				// 存好tail信息，并顺便解密，以备后面udp报文使用
@@ -493,37 +483,37 @@ int Drcom_UDP_Handler(char *recv_data)
 				encryptDrcomInfo(tailinfo);
 				data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data,recv_data);
 				isNeedHeartBeat = 1;
-				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_INFO (step:0x",recv_data[4],")! Send MISC_HEART_BEAT_01, data len = ",data_len);
+				LogWrite(INF, "UDP Server: MISC_RESPONSE_INFO (step:0x%02hhx)! Send MISC_HEART_BEAT_01, data len = %d", recv_data[4], data_len);
 			break;
 			case MISC_HEART_BEAT:
 				switch ((DRCOM_MISC_HEART_BEAT_Type)recv_data[5])
 				{
 					case MISC_FILE_TYPE:
 						data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data,recv_data);
-						LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_FILE_TYPE (type:0x",recv_data[5],")!Send MISC_HEART_BEAT_01, data len = ",data_len);
+						LogWrite(INF, "UDP Server: MISC_FILE_TYPE (type:0x%02hhx)! Send MISC_HEART_BEAT_01, data len = %d", recv_data[5], data_len);
 					break;
 					case MISC_HEART_BEAT_02_TYPE:
 						data_len = Drcom_MISC_HEART_BEAT_03_TYPE_Setter(send_udp_data,recv_data);
-						LogWrite(INF,"%s%x%s%d"," UDP_Server: Request MISC_HEART_BEAT_02 (type:0x",recv_data[5],")! Response MISC_HEART_BEAT_03_TYPE data len=",data_len);
+						LogWrite(INF,"UDP Server: Request MISC_HEART_BEAT_02 (type:0x%02hhx)! Response MISC_HEART_BEAT_03_TYPE data len = %d", recv_data[5], data_len);
 					break;
 					case MISC_HEART_BEAT_04_TYPE:
 					// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 						BaseHeartbeatTime = time(NULL);
 						//LogWrite(INF,"%s%x%s%d"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")!Response ALIVE_HEARTBEAT_TYPE data len=",data_len);
-						LogWrite(INF,"%s%x%s"," UDP_Server: Request HEART_BEAT_04 (type:0x",recv_data[5],")! Waiting for the next heartbeat cycle");
+						LogWrite(INF,"UDP Server: Request HEART_BEAT_04 (type:0x%02hhx)! Waiting for the next heart beat cycle.", recv_data[5]);
 					break;
 					default:
-						LogWrite(ERROR,"%s%x%s","[DRCOM_MISC_HEART_BEAT_Type] UDP_Server: Request (type:0x", recv_data[5],")! Error! Unexpected request type!");
+						LogWrite(ERROR,"UDP Server: Unexpected heart beat request (type:0x%02hhx)!", recv_data[5]);
 					break;
 				}
 			break;
 			case MISC_RESPONSE_HEART_BEAT:
 				data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data,recv_data);
 				client_udp_heartbeat_sent_cnt = 0;
-				LogWrite(INF,"%s%x%s%d"," UDP_Server: MISC_RESPONSE_HEART_BEAT (step:0x",recv_data[4],")! Send MISC_HEART_BEAT_01, data len = ",data_len);
+				LogWrite(INF,"UDP Server: MISC_RESPONSE_HEART_BEAT (step:0x%02hhx)! Send MISC_HEART_BEAT_01, data len = %d", recv_data[4], data_len);
 			break;
 			default:
-				LogWrite(ERROR,"%s%x%s","[DRCOM_Type] UDP_Server: Request (type:0x", recv_data[2],")! Error! Unexpected request type!");
+				LogWrite(ERROR,"UDP Server: Unexpected request (type:0x%02hhx)!", recv_data[2]);
 			break;
 		}
 	}
@@ -531,7 +521,7 @@ int Drcom_UDP_Handler(char *recv_data)
 	// Message, Server information
 	if ((recv_data[0] == 0x4d) && (recv_data[1] == 0x38)) {
 		LogWrite(INF, "%s%s",
-				"UDP_Server: Server Information: ",
+				"UDP Server: Server Information: ",
 				recv_data+4);
 	}
 	memset(recv_data, 0, ETH_FRAME_LEN);
@@ -587,7 +577,7 @@ void auth_8021x_Handler(uint8_t recv_data[])
 				LogWrite(ERROR,"%s","Error! Unexpected request type!Server: Request ALLOCATED_0x08! Pls report it.");
 			break;
 			default:
-				LogWrite(ERROR,"%s%x%s","Server: Request (type: 0x",(EAP_Type)recv_data[22],")! Error! Unexpected request type! Pls report it.");
+				LogWrite(ERROR,"%s%02hhx%s","Server: Request (type: 0x",(EAP_Type)recv_data[22],")! Error! Unexpected request type! Pls report it.");
 				LogWrite(ERROR,"%s", "#scutclient Exit#");
 				exit(EXIT_FAILURE);
 			break;
@@ -608,12 +598,12 @@ void auth_8021x_Handler(uint8_t recv_data[])
 			sleep(AUTH_8021X_RECV_DELAY);
 			/* 主动发起认证会话 */
 			send_8021x_data_len = appendStartPkt(EthHeader);
-			LogWrite(ERROR,"%s%x","Server: errtype = 0x", errtype);
+			LogWrite(ERROR,"%s%02hhx","Server: errtype = 0x", errtype);
 			LogWrite(INF,"%s","Client: Multcast Restart.");
 		}
 		else
 		{
-			LogWrite(ERROR,"%s%x","Reconnection failed. Server: errtype=0x", errtype);
+			LogWrite(ERROR,"%s%02hhx","Reconnection failed. Server: errtype=0x", errtype);
 			exit(EXIT_FAILURE);
 		}
 	}
