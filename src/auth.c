@@ -11,6 +11,7 @@ extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
 extern char *UserName;
 extern char *Password;
+extern char *HookCmd;
 extern char DeviceName[IFNAMSIZ];
 extern unsigned char		HostName[32];
 
@@ -652,12 +653,15 @@ void auth_8021x_Handler(uint8_t recv_data[])
 	}
 	else if ((EAP_Code)recv_data[18] == SUCCESS)
 	{
-		LogWrite(INF,"%s", "Server: Success.");
+		LogWrite(INF, "Server: Success.");
 		times=AUTH_8021X_RECV_TIMES;
 		success_8021x = 1;
 		send_udp_data_len = Drcom_MISC_START_ALIVE_Setter(send_udp_data,recv_data);
 		// 一秒后才回复
 		sleep(AUTH_8021X_RECV_DELAY);
+		if(HookCmd) {
+			system(HookCmd);
+		}
 		auth_UDP_Sender(send_udp_data, send_udp_data_len);
 	}
 	// 只有大于0才发送

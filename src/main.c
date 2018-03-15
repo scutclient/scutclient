@@ -16,6 +16,7 @@ uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 char *UserName;
 char *Password;
+char *HookCmd;
 char DeviceName[IFNAMSIZ] = "eth0";
 unsigned char		HostName[32] = {0};
 unsigned char		Version[64] = {0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a};
@@ -33,6 +34,7 @@ void PrintHelp(const char * argn)
 		" -s, --udp-server <server>\n"
 		" -c, --cli-version <client version>\n"
 		" -h, --hash <hash>\n"
+		" -E, --auth-exec <command>\n"
 		" -D, --debug\n"
 		" -o, --logoff\n",
 		argn);
@@ -52,7 +54,7 @@ int main(int argc, char *argv[])
 	uint8_t buf[128];
 
 	// see info.h for more about long_options
-	while ((ch = getopt_long(argc, argv, "u:p:f:m:a:k:g:n:t:s:c:h:oD",
+	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:s:c:h:oD",
 									long_options, NULL)) != -1) {
 		switch(ch) {
 		case 'u':
@@ -60,6 +62,9 @@ int main(int argc, char *argv[])
 		break;
 		case 'p':
 			Password = optarg;
+		break;
+		case 'E':
+			HookCmd = optarg;
 		break;
 		case 'f':
 			strcpy(DeviceName, optarg);
