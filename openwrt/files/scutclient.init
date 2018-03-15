@@ -18,6 +18,7 @@ scutclient_validate_drcom() {
 		'hostname:string:Lenovo-PC' \
 		'server_auth_ip:ip4addr:202.38.210.131' \
 		'version:string:4472434f4d0096022a' \
+		'authexe:string' \
 		'hash:string:2ec15ad258aee9604b18f2f8114da38db16efd00' || exit 1
 }
 
@@ -57,6 +58,7 @@ scutclient_start_instance() {
 		--cli-version "$version" \
 		--hash "$hash"
 	[ "$debug" -ge 1 ] && procd_append_param command --debug
+	[ -n "$authexe" ] && procd_append_param command --auth-exec "$authexe"
 	procd_set_param respawn 3600 5 5
 	procd_set_param stdout 1
 	procd_set_param stderr 1
@@ -101,7 +103,7 @@ service_triggers() {
 }
 
 start_service() {
-	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname
+	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname authexe
 	scutclient_load_config
 	[ $enable -eq 0 ] && exit
 	config_foreach scutclient_start_instance scutclient
