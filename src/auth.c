@@ -16,6 +16,7 @@ extern unsigned char		HostName[32];
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
+#define AUTH_8021X_LOGOFF_DELAY 500000 // 客户端退出登录收包等待时间 0.5秒（50万微秒)
 #define AUTH_8021X_RECV_DELAY  1 // 客户端收8021x报文延时秒数，默认1秒
 #define AUTH_8021X_RECV_TIMES  3 // 客户端收8021x报文重试次数
 
@@ -61,7 +62,6 @@ size_t appendStartPkt(uint8_t header[]);
 size_t appendResponseIdentity(const uint8_t request[]);
 size_t appendResponseMD5(const uint8_t request[]);
 int Drcom_UDP_Handler(char *recv_data);
-void sendLogoffPkt();
 
 int getAuthIfIndex(int sock)
 {
@@ -129,27 +129,33 @@ ERR:
 	return ret;
 }
 
-void auth_8021x_RecvLogoff() {
-	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
+/*
+ * 发送 EAPOL Logoff 并等待回复
+ */
+int auth_8021x_Logoff() {
+	struct timeval timeout={0, AUTH_8021X_LOGOFF_DELAY};
 	struct timeval tmp_timeout=timeout;
 	fd_set fdR;
 	uint8_t recv_8021x_buf[ETH_FRAME_LEN] = {0};
+	uint8_t LogoffCnt = 2;// 发送两次
+	int ret = 0;
 
+	LogWrite(INF,"Client: Send EAPOL Logoff.");
 	// 客户端发送Logoff后，接收服务器回复
-	// 计时AUTH_8021X_RECV_TIMES秒，收到Fail后退出
-	BaseHeartbeatTime = time(NULL);
-	while(time(NULL) - BaseHeartbeatTime < AUTH_8021X_RECV_TIMES)
+	while(LogoffCnt--)
 	{
+		send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
+		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 		FD_ZERO(&fdR);
 		FD_SET(auth_8021x_sock, &fdR);
 		tmp_timeout = timeout;
 		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout))
 		{
 			case -1:
-				LogWrite(ERROR,"first select socket failed: %s", strerror(errno));
+				LogWrite(ERROR,"802.1X Logoff: select socket failed: %s", strerror(errno));
+				return -1;
 			break;
 			case 0:
-				LogWrite(INF,"%s","first socket select time out.");
 			break;
 			default:
 				if (FD_ISSET(auth_8021x_sock,&fdR))
@@ -158,15 +164,57 @@ void auth_8021x_RecvLogoff() {
 					{
 						if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
 						{
-							LogWrite(INF,"%s","Ready!Drcom Mode Go.");
-							// 退出循环
-							BaseHeartbeatTime = 0;
+							// 按照Dr.com客户端抓包结果，虽然成功退出但是两个logoff还是要发完的
+							LogWrite(INF,"Logged off.");
+							ret = 1;
 						}
 					}
 				}
 			break;
 		}
 	}
+	return ret;
+}
+
+int auth_UDP_Init()
+{
+	int on = 1;
+
+	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (auth_udp_sock < 0)
+	{
+		LogWrite(ERROR, "Create UDP socket failed: %s", strerror(errno));
+		return auth_udp_sock;
+	}
+
+	if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR|SO_BROADCAST,&on,sizeof(on)))<0)
+	{
+		LogWrite(ERROR, "UDP setsockopt failed: %s", strerror(errno));
+		close(auth_udp_sock);
+		return -1;
+	}
+
+
+	bzero(&serv_addr,sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+
+	serv_addr.sin_addr.s_addr = inet_addr((char*)udp_server_ipaddr);
+	serv_addr.sin_port = htons(SERVER_PORT);
+
+	bzero(&local_addr,sizeof(local_addr));
+	local_addr.sin_family = AF_INET;
+
+	local_addr.sin_addr.s_addr = local_ipaddr.s_addr;
+	local_addr.sin_port = htons(SERVER_PORT);
+
+	if(bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr)) < 0)
+	{
+		LogWrite(ERROR, "Unable to bind to UDP socket: %s", strerror(errno));
+		close(auth_udp_sock);
+		return -1;
+	}
+
+	return 0;
 }
 
 int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
@@ -246,16 +294,6 @@ size_t appendResponseMD5(const uint8_t request[])
 	return AppendDrcomResponseMD5(request, EthHeader, UserName, Password, send_8021x_data);
 }
 
-void sendLogoffPkt()
-{
-	LogWrite(INF,"%s","Send LOGOFF.");
-	// 连发两次，确保已经下线
-	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
-	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-	send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
-	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
-}
-
 void initAuthenticationInfo()
 {
 	memcpy(MultcastHeader, MultcastAddr, 6);
@@ -289,7 +327,7 @@ void printIfInfo()
 }
 
 /*
- * 发送 EAPOL Start 以获取服务器MAC地址
+ * 发送 EAPOL Start 以获取服务器MAC地址及执行后续认证流程
  * Dr.com客户端发送EAP包目标MAC有3个：
  * 组播地址 (01:80:c2:00:00:03)
  * 广播地址 (ff:ff:ff:ff:ff:ff)
@@ -343,7 +381,7 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		{
 			LogWrite(ERROR,"%s", "Error! No Response");
 			// 确保下线
-			sendLogoffPkt();
+			auth_8021x_Logoff();
 			exit(EXIT_FAILURE);
 		}
 
@@ -370,7 +408,7 @@ int Authentication(int client)
 {
 	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
 	struct timeval tmp_timeout=timeout;
-	int on = 1;
+	int ret = 0;
 	fd_set fdR;
 
 	uint8_t recv_8021x_buf[ETH_FRAME_LEN] = {0};
@@ -380,45 +418,22 @@ int Authentication(int client)
 	}
 	initAuthenticationInfo();
 	printIfInfo();
-	sendLogoffPkt();
+	ret = auth_8021x_Logoff();
 	if(client == LOGOFF) {
 		close(auth_8021x_sock);
 		return 0;
 	}
-	auth_8021x_RecvLogoff();
-	//静态全局变量auth_udp_sock
-	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (auth_udp_sock < 0)
-	{
-		LogWrite(ERROR, "Create UDP socket failed: %s", strerror(errno));
-		exit(EXIT_FAILURE);
+
+	if(ret == 1) {
+		//如果收到EAP Failure，等待2秒再发送EAPOL Start
+		sleep(2);
+	} else if(ret < 0) {
+		goto ERR1;
 	}
 
-	if((setsockopt(auth_udp_sock,SOL_SOCKET,SO_REUSEADDR|SO_BROADCAST,&on,sizeof(on)))<0)
-	{
-		LogWrite(ERROR, "UDP setsockopt failed: %s", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-
-	bzero(&serv_addr,sizeof(serv_addr));
-	serv_addr.sin_family = AF_INET;
-	//unsigned char server_ip[16]= {0};
-	//GetUdpServerIpAddressFromDevice(server_ip);
-
-	serv_addr.sin_addr.s_addr = inet_addr(udp_server_ipaddr);
-	serv_addr.sin_port = htons(SERVER_PORT);
-
-	bzero(&local_addr,sizeof(local_addr));
-	local_addr.sin_family = AF_INET;
-
-	local_addr.sin_addr.s_addr = local_ipaddr.s_addr;
-	local_addr.sin_port = htons(SERVER_PORT);
-
-	if(bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr)) < 0)
-	{
-		LogWrite(ERROR, "Unable to bind to UDP socket: %s", strerror(errno));
-		exit(EXIT_FAILURE);
+	if((ret = auth_UDP_Init()) != 0) {
+		LogWrite(ERROR, "Unable to initialize UDP socket.");
+		goto ERR1;
 	}
 
 	loginToGetServerMAC(recv_8021x_buf);
@@ -434,6 +449,8 @@ int Authentication(int client)
 		{
 			case -1:
 				LogWrite(ERROR,"select socket failed: %s", strerror(errno));
+				ret = -1;
+				resev = 0;
 			break;
 			case 0:
 			break;
@@ -463,7 +480,10 @@ int Authentication(int client)
 		{
 			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,recv_udp_data);
 			LogWrite(INF,"%s%d","UDP Client: Send ALIVE_HEARTBEAT, data len = ",send_udp_data_len);
-			auth_UDP_Sender(send_udp_data, send_udp_data_len);
+			if(auth_UDP_Sender(send_udp_data, send_udp_data_len) == 0) {
+				ret = -1;
+				break;
+			}
 			// 发送后记下基线时间，开始重新计时心跳时间
 			BaseHeartbeatTime = time(NULL);
 			// 发送 发起心跳的包 的计数
@@ -471,17 +491,18 @@ int Authentication(int client)
 			if (client_udp_heartbeat_sent_cnt > 3) {
 				// 认为已经掉线
 				LogWrite(ERROR,"UDP Client: Send ALIVE_HEARTBEAT %d times, but server has no response.", client_udp_heartbeat_sent_cnt);
-				LogWrite(ERROR, "%s", " Exit.");
-				exit(0);
+				ret = -1;
+				resev = 0;
 			}
 		}
 
 	}
-	close(auth_udp_sock);
 
-	sendLogoffPkt();
+	close(auth_udp_sock);
+	auth_8021x_Logoff();
+ERR1:
 	close(auth_8021x_sock);
-	return 1;
+	return ret;
 }
 
 typedef enum {MISC_START_ALIVE=0x01, MISC_RESPONSE_FOR_ALIVE=0x02, MISC_INFO=0x03, MISC_RESPONSE_INFO=0x04, MISC_HEART_BEAT=0x0b, MISC_RESPONSE_HEART_BEAT=0x06} DRCOM_Type;
