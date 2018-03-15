@@ -5,7 +5,9 @@
 #include "auth.h"
 #include "info.h"
 #include "tracelog.h"
+#include <signal.h>
 
+struct sigaction sa_term;
 uint8_t DebugMark = 0;
 struct in_addr local_ipaddr;
 uint8_t	udp_server_ip[4] = {202, 38, 210, 131};	// ip address
@@ -34,6 +36,13 @@ void PrintHelp(const char * argn)
 		" -D, --debug\n"
 		" -o, --logoff\n",
 		argn);
+}
+
+void handle_term(int signal)
+{
+	LogWrite(INF, "Exiting...");
+	auth_8021x_Logoff();
+	exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -106,6 +115,14 @@ int main(int argc, char *argv[])
 	}
 
 	GetMacOfDevice(DeviceName, MAC);
+
+	/* 配置退出登录的signal handler */
+	sa_term.sa_handler = &handle_term;
+	sa_term.sa_flags = SA_RESETHAND;
+	sigfillset(&sa_term.sa_mask);
+	sigaction(SIGTERM, &sa_term, NULL);
+	sigaction(SIGINT, &sa_term, NULL);
+
 	/* 调用子函数完成802.1X认证 */
 	Authentication(client);
 

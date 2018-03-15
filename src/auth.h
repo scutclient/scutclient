@@ -31,5 +31,6 @@
 #define SERVER_PORT 61440
 
 struct sockaddr_ll auth_8021x_addr;
-	
+
+int auth_8021x_Logoff();
 int Authentication(int client);
