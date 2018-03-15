@@ -28,13 +28,13 @@ unsigned char		udp_server_ipaddr[16] = "202.38.210.131";
 void PrintHelp(const char * argn)
 {
 	printf("Usage: %s --username <username> --password <password> [options...]\n"
-		" -f, --iface <ifname>\n"
-		" -n, --dns <dns>\n"
+		" -f, --iface <ifname> Interface to perform authentication.\n"
+		" -n, --dns <dns> DNS server address to be sent to UDP server.\n"
 		" -t, --hostname <hostname>\n"
 		" -s, --udp-server <server>\n"
 		" -c, --cli-version <client version>\n"
-		" -h, --hash <hash>\n"
-		" -E, --auth-exec <command>\n"
+		" -h, --hash <hash> DrAuthSvr.dll hash value.\n"
+		" -E, --auth-exec <command> Command to be execute after EAP authentication success.\n"
 		" -D, --debug\n"
 		" -o, --logoff\n",
 		argn);
