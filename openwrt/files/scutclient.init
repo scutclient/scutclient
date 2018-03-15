@@ -107,11 +107,6 @@ start_service() {
 	config_foreach scutclient_start_instance scutclient
 }
 
-stop_service() {
-	config_load scutclient
-	config_foreach scutclient_logoff scutclient
-}
-
 reload_service() {
 	restart
 }
