@@ -39,7 +39,6 @@ static uint8_t EthHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0
 static uint8_t BroadcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0x88,0x8e};
 static uint8_t MultcastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x80,0xc2,0x00,0x00,0x03,0x88,0x8e};
 static uint8_t UnicastHeader[14] = {0x00,0x00,0x00,0x00,0x00,0x00,0x01,0xd0,0xf8,0x00,0x00,0x03,0x88,0x8e};
-static int clientHandler = 0; // 判定不同客户端处理的标志位
 static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
@@ -64,39 +63,110 @@ size_t appendResponseMD5(const uint8_t request[]);
 int Drcom_UDP_Handler(char *recv_data);
 void sendLogoffPkt();
 
-int checkWanStatus(int sock)
+int getAuthIfIndex(int sock)
 {
 	struct ifreq ifr;
 	bzero(&ifr,sizeof(ifr));
-	//unsigned char devicename[16] = {0};
-	//GetDeviceName(devicename);
+
 	strcpy(ifr.ifr_name,DeviceName);
 	if(ioctl(sock, SIOCGIFFLAGS, &ifr) < 0)
 	{
 		LogWrite(ERROR,"ioctl get if_flag error: %s", strerror(errno));
-		return 0;
+		return errno;
 	}
 	if(ifr.ifr_ifru.ifru_flags & IFF_RUNNING )
 	{
-		LogWrite(INF,"%s","WAN link up.");
+		LogWrite(INF,"%s","Interface link up.");
 	}
 	else
 	{
-		LogWrite(ERROR,"%s","WAN link down. Please check it.");
-		return 0;
+		LogWrite(ERROR,"%s","Interface link down. Please check it.");
+		return -1;
 	}
 	//获取接口索引
 	if(ioctl(sock,SIOCGIFINDEX,&ifr) < 0)
 	{
-		LogWrite(ERROR,"Get WAN index error: %s", strerror(errno));
-		return 0;
+		LogWrite(ERROR,"Get interface index error: %s", strerror(errno));
+		return -1;
 	}
+
+	return ifr.ifr_ifindex;
+}
+
+int auth_8021x_Init()
+{
+	int optv = 1;
+	int ret = 0;
+
+	// 只接受EAP的包
+	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+	if(auth_8021x_sock < 0)
+	{
+		LogWrite(ERROR,"802.1X: Unable to create raw socket: %s", strerror(errno));
+		return auth_8021x_sock;
+	}
+
+	if((ret = setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&optv,sizeof(optv)))<0)
+	{
+		LogWrite(ERROR,"802.1X: setsockopt failed: %s", strerror(errno));
+		goto ERR;
+	}
+
+	if((ret = getAuthIfIndex(auth_8021x_sock)) < 0)
+	{
+		goto ERR;
+	}
+
 	bzero(&auth_8021x_addr,sizeof(auth_8021x_addr));
-	auth_8021x_addr.sll_ifindex = ifr.ifr_ifindex;
+	auth_8021x_addr.sll_ifindex = ret;
 	auth_8021x_addr.sll_family = PF_PACKET;
 	auth_8021x_addr.sll_protocol  = htons(ETH_P_PAE);
 	auth_8021x_addr.sll_pkttype = PACKET_HOST;
-	return 1;
+	return 0;
+
+ERR:
+	close(auth_8021x_sock);
+	return ret;
+}
+
+void auth_8021x_RecvLogoff() {
+	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
+	struct timeval tmp_timeout=timeout;
+	fd_set fdR;
+	uint8_t recv_8021x_buf[ETH_FRAME_LEN] = {0};
+
+	// 客户端发送Logoff后，接收服务器回复
+	// 计时AUTH_8021X_RECV_TIMES秒，收到Fail后退出
+	BaseHeartbeatTime = time(NULL);
+	while(time(NULL) - BaseHeartbeatTime < AUTH_8021X_RECV_TIMES)
+	{
+		FD_ZERO(&fdR);
+		FD_SET(auth_8021x_sock, &fdR);
+		tmp_timeout = timeout;
+		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout))
+		{
+			case -1:
+				LogWrite(ERROR,"first select socket failed: %s", strerror(errno));
+			break;
+			case 0:
+				LogWrite(INF,"%s","first socket select time out.");
+			break;
+			default:
+				if (FD_ISSET(auth_8021x_sock,&fdR))
+				{
+					if(auth_8021x_Receiver(recv_8021x_buf))
+					{
+						if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
+						{
+							LogWrite(INF,"%s","Ready!Drcom Mode Go.");
+							// 退出循环
+							BaseHeartbeatTime = 0;
+						}
+					}
+				}
+			break;
+		}
+	}
 }
 
 int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
@@ -188,9 +258,6 @@ void sendLogoffPkt()
 
 void initAuthenticationInfo()
 {
-	//uint8_t MAC[6]= {0};
-	//GetMacFromDevice(MAC);
-
 	memcpy(MultcastHeader, MultcastAddr, 6);
 	memcpy(MultcastHeader+6, MAC, 6);
 	MultcastHeader[12] = 0x88;
@@ -209,29 +276,36 @@ void initAuthenticationInfo()
 	memcpy(EthHeader+6, MAC, 6);
 	EthHeader[12] = 0x88;
 	EthHeader[13] = 0x8e;
-
-	// 打印网络信息到前台显示
-	LogWrite(INF,"%s %s","Hostname :",HostName);
-	LogWrite(INF,"%s %s","IP :", inet_ntoa(local_ipaddr));
-	LogWrite(INF,"%s %d.%d.%d.%d","DNS :",dns[0],dns[1],dns[2],dns[3]);
-	LogWrite(INF,"%s %d.%d.%d.%d","udp server :",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
-	LogWrite(INF,"%s %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx","MAC :",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
+void printIfInfo()
+{
+	// 打印网络信息到前台显示
+	LogWrite(INF,"Hostname: %s",HostName);
+	LogWrite(INF,"IP: %s", inet_ntoa(local_ipaddr));
+	LogWrite(INF,"DNS: %hhu.%hhu.%hhu.%hhu",dns[0],dns[1],dns[2],dns[3]);
+	LogWrite(INF,"UDP server: %hhu.%hhu.%hhu.%hhu",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
+	LogWrite(INF,"MAC: %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
+}
+
+/*
+ * 发送 EAPOL Start 以获取服务器MAC地址
+ * Dr.com客户端发送EAP包目标MAC有3个：
+ * 组播地址 (01:80:c2:00:00:03)
+ * 广播地址 (ff:ff:ff:ff:ff:ff)
+ * 锐捷交换机 (01:d0:f8:00:00:03) PS:我校应该没有这货
+ */
 void loginToGetServerMAC(uint8_t recv_data[])
 {
 	fd_set fdR;
-	struct ethhdr *recv_hdr;
-	struct ethhdr *local_ethhdr;
-	local_ethhdr = (struct ethhdr *) EthHeader;
 	struct timeval timeout={AUTH_8021X_RECV_DELAY,0};
 	struct timeval tmp_timeout=timeout;
-	//先发一次
+
 	send_8021x_data_len = appendStartPkt(MultcastHeader);
 	auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	LogWrite(INF,"%s","Client: Multcast Start.");
 	times = AUTH_8021X_RECV_TIMES;
-	while(resev ==0)
+	while(resev == 0)
 	{
 		FD_ZERO(&fdR);
 		FD_SET(auth_8021x_sock, &fdR);
@@ -298,74 +372,20 @@ int Authentication(int client)
 	struct timeval tmp_timeout=timeout;
 	int on = 1;
 	fd_set fdR;
-	clientHandler = client;
-
-	// 只接受EAP的包
-	auth_8021x_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
-
-	if(auth_8021x_sock < 0)
-	{
-		LogWrite(ERROR,"802.1X: Unable to create raw socket: %s", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	if((setsockopt(auth_8021x_sock,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0)
-	{
-		LogWrite(ERROR,"802.1X: setsockopt failed: %s", strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	int result = checkWanStatus(auth_8021x_sock);
-	if(result == 0)
-	{
-		LogWrite(ERROR,"%s","Client exit.");
-		close(auth_8021x_sock);
-		exit(EXIT_FAILURE);
-	}
-
-	initAuthenticationInfo();
 
 	uint8_t recv_8021x_buf[ETH_FRAME_LEN] = {0};
-	if(clientHandler==LOGOFF)
-	{
-		sendLogoffPkt();
-
+	if(auth_8021x_Init() != 0) {
+		LogWrite(ERROR, "Unable to initialize 802.1x socket.");
+		exit(EXIT_FAILURE);
+	}
+	initAuthenticationInfo();
+	printIfInfo();
+	sendLogoffPkt();
+	if(client == LOGOFF) {
+		close(auth_8021x_sock);
 		return 0;
 	}
-	//发logoff确保下线
-	sendLogoffPkt();
-
-	// 计时AUTH_8021X_RECV_TIMES秒，收到Fail后退出
-	BaseHeartbeatTime = time(NULL);
-	while(time(NULL) - BaseHeartbeatTime < AUTH_8021X_RECV_TIMES)
-	{
-		FD_ZERO(&fdR);
-		FD_SET(auth_8021x_sock, &fdR);
-		tmp_timeout = timeout;
-		switch (select(auth_8021x_sock + 1, &fdR, NULL, NULL, &tmp_timeout))
-		{
-			case -1:
-				LogWrite(ERROR,"first select socket failed: %s", strerror(errno));
-			break;
-			case 0:
-				LogWrite(INF,"%s","first socket select time out.");
-			break;
-			default:
-				if (FD_ISSET(auth_8021x_sock,&fdR))
-				{
-					if(auth_8021x_Receiver(recv_8021x_buf))
-					{
-						if ((EAP_Code)recv_8021x_buf[18] == FAILURE)
-						{
-							LogWrite(INF,"%s","Ready!Drcom Mode Go.");
-							// 退出循环
-							BaseHeartbeatTime = 0;
-						}
-					}
-				}
-			break;
-		}
-	}
+	auth_8021x_RecvLogoff();
 	//静态全局变量auth_udp_sock
 	auth_udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (auth_udp_sock < 0)
