@@ -50,9 +50,9 @@ endef
 
 define Package/scutclient/install
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/scutclient.config $(1)/etc/config/scutclient
+	$(INSTALL_DATA) $(CDIR)/files/scutclient.config $(1)/etc/config/scutclient
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/scutclient.init $(1)/etc/init.d/scutclient
+	$(INSTALL_BIN) $(CDIR)/files/scutclient.init $(1)/etc/init.d/scutclient
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scutclient $(1)/usr/bin
 endef
