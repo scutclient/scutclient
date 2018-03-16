@@ -20,6 +20,7 @@ PKG_RELEASE:=1
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/scutclient/scutclient.git
 PKG_SOURCE_VERSION:=cdb4fd579aea4adbe4fbb280d8a35fefb738af1b
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 endif
 
@@ -50,9 +51,9 @@ endef
 
 define Package/scutclient/install
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) $(CDIR)/files/scutclient.config $(1)/etc/config/scutclient
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/openwrt/files/scutclient.config $(1)/etc/config/scutclient
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(CDIR)/files/scutclient.init $(1)/etc/init.d/scutclient
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/openwrt/files/scutclient.init $(1)/etc/init.d/scutclient
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scutclient $(1)/usr/bin
 endef
