@@ -48,6 +48,12 @@ scutclient_start_instance() {
 	scutclient_validate_scutclient "$cfg"
 	uci_validate_section network interface "$interface" 'ifname:string'
 	procd_open_instance "scutclient_${cfg}_${interface}"
+	procd_set_param respawn 3600 5 5
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	[ "$plugin_redial" -eq 1 ] && {
+		procd_set_param netdev $ifname
+	}
 	procd_set_param command "$SCUTCLIENT_PATH"
 	procd_append_param command --username "$username" \
 		--password "$password" \
@@ -59,12 +65,6 @@ scutclient_start_instance() {
 		--hash "$hash"
 	[ "$debug" -ge 1 ] && procd_append_param command --debug
 	[ -n "$authexe" ] && procd_append_param command --auth-exec "$authexe"
-	procd_set_param respawn 3600 5 5
-	procd_set_param stdout 1
-	procd_set_param stderr 1
-	[ "$plugin_redial" -eq 1 ] && {
-		procd_set_param netdev $ifname
-	}
 	procd_close_instance
 }
 
