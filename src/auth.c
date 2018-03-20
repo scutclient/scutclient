@@ -4,8 +4,7 @@
 
 /* 静态变量 */
 
-extern uint8_t	udp_server_ip[4];	// ip address
-extern unsigned char udp_server_ipaddr[16];
+extern struct in_addr udpserver_ipaddr;
 extern struct in_addr local_ipaddr;
 extern uint8_t	dns[4];
 extern uint8_t	MAC[6];
@@ -199,13 +198,13 @@ int auth_UDP_Init()
 	bzero(&serv_addr,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 
-	serv_addr.sin_addr.s_addr = inet_addr((char*)udp_server_ipaddr);
+	serv_addr.sin_addr = udpserver_ipaddr;
 	serv_addr.sin_port = htons(SERVER_PORT);
 
 	bzero(&local_addr,sizeof(local_addr));
 	local_addr.sin_family = AF_INET;
 
-	local_addr.sin_addr.s_addr = local_ipaddr.s_addr;
+	local_addr.sin_addr = local_ipaddr;
 	local_addr.sin_port = htons(SERVER_PORT);
 
 	if(bind(auth_udp_sock,(struct sockaddr *)&(local_addr),sizeof(local_addr)) < 0)
@@ -323,7 +322,7 @@ void printIfInfo()
 	LogWrite(INF,"Hostname: %s",HostName);
 	LogWrite(INF,"IP: %s", inet_ntoa(local_ipaddr));
 	LogWrite(INF,"DNS: %hhu.%hhu.%hhu.%hhu",dns[0],dns[1],dns[2],dns[3]);
-	LogWrite(INF,"UDP server: %hhu.%hhu.%hhu.%hhu",udp_server_ip[0],udp_server_ip[1],udp_server_ip[2],udp_server_ip[3]);
+	LogWrite(INF,"UDP server: %s",inet_ntoa(udpserver_ipaddr));
 	LogWrite(INF,"MAC: %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }
 
