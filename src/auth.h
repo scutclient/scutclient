@@ -26,7 +26,6 @@
 #include "drcom.h"
 
 #define LOGOFF 0 // 下线标志位
-#define DRCOM_CLIENT 1 // Drcom客户端标志位
 #define SERVER_ADDR "202.38.210.131"
 #define SERVER_PORT 61440
 
