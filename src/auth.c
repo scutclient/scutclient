@@ -56,12 +56,6 @@ typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED_0x07=7, ALLOCATED_0x08=8} EAP_Type;
 typedef uint8_t EAP_ID;
 struct sockaddr_in serv_addr,local_addr;
-// 子函数声明
-void auth_8021x_Handler(uint8_t recv_data[]);
-size_t appendStartPkt(uint8_t header[]);
-size_t appendResponseIdentity(const uint8_t request[]);
-size_t appendResponseMD5(const uint8_t request[]);
-int Drcom_UDP_Handler(char *recv_data);
 
 int getAuthIfIndex(int sock)
 {
