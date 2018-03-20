@@ -6,9 +6,9 @@ extern struct in_addr dns_ipaddr;
 extern uint8_t MAC[6];
 extern char *UserName;
 extern char HostName[32];
+extern char *Hash;
 extern unsigned char		Version[64];
 extern int					Version_len ;
-extern unsigned char		Hash[64] ;
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;
@@ -18,6 +18,7 @@ static uint8_t crc_md5_info[16] = {0};
 static int drcom_package_id = 0;  // 包的id，每次自增1
 char drcom_misc1_flux[4];
 char drcom_misc3_flux[4];
+uint8_t tailinfo[16];
 
 uint32_t checkCPULittleEndian()
 {
@@ -38,7 +39,7 @@ uint32_t big2little_32(uint32_t A)
         (((uint32_t)(A) & 0x000000ff) << 24));
 }
 
-uint32_t drcom_crc32(char *data, int data_len)
+uint32_t drcom_crc32(uint8_t *data, int data_len)
 {
 	uint32_t ret = 0;
 	int i;
@@ -75,7 +76,7 @@ void encryptDrcomInfo(unsigned char *info)
 	free(chartmp);
 }
 
-size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
+size_t AppendDrcomStartPkt( uint8_t *EthHeader, uint8_t *Packet )
 {
 	size_t packetlen = 0;
 	memset(Packet, 0x00,97);//fill 0x00
@@ -93,7 +94,7 @@ size_t AppendDrcomStartPkt( uint8_t EthHeader[], uint8_t *Packet )
 	return packetlen;
 }
 
-size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[], unsigned char *UserName, uint8_t *Packet )
+size_t AppendDrcomResponseIdentity(const uint8_t *request, uint8_t *EthHeader, const char *UserName, uint8_t *Packet )
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -138,7 +139,7 @@ size_t AppendDrcomResponseIdentity(const uint8_t request[], uint8_t EthHeader[],
 	return packetlen;
 }
 
-size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsigned char *UserName, unsigned char *Password, uint8_t *Packet)
+size_t AppendDrcomResponseMD5(const uint8_t *request, uint8_t *EthHeader, const char *UserName, const char *Password, uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
@@ -190,7 +191,7 @@ size_t AppendDrcomResponseMD5(const uint8_t request[],uint8_t EthHeader[], unsig
 	return packetlen;
 }
 
-size_t AppendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
+size_t AppendDrcomLogoffPkt(uint8_t *EthHeader, uint8_t *Packet)
 {
 	size_t packetlen = 0;
 	memset(Packet, 0xa5,97);//fill 0xa5
@@ -208,7 +209,7 @@ size_t AppendDrcomLogoffPkt(uint8_t EthHeader[], uint8_t *Packet)
 	return packetlen;
 }
 
-int Drcom_MISC_START_ALIVE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_START_ALIVE_Setter(uint8_t *send_data, uint8_t *recv_data)
 {
 	int packetlen = 0;
 	send_data[packetlen++] = 0x07;
@@ -222,7 +223,7 @@ int Drcom_MISC_START_ALIVE_Setter(unsigned char *send_data, char *recv_data)
 	return packetlen;
 }
 
-int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_INFO_Setter(uint8_t *send_data, uint8_t *recv_data)
 {
 	int packetlen = 0;
 	send_data[packetlen++] = 0x07;	// Code
@@ -321,8 +322,6 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	// 先填充68位0x00 (在这64位里面填充HASH信息，预留需要补0的四位)
 	memset(send_data+packetlen,0x00,68);
 	// 填充HASH信息
-	//unsigned char hash[64] = {0};
-	//GetHashFromDevice(hash);
 	memcpy(send_data+packetlen, Hash, strlen(Hash));
 	packetlen += 64;
 	//判定是否是4的倍数
@@ -345,7 +344,7 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	return packetlen;
 }
 
-int Drcom_MISC_HEART_BEAT_01_TYPE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_HEART_BEAT_01_TYPE_Setter(uint8_t *send_data, uint8_t *recv_data)
 {	
 	int packetlen = 0;
 	memset(send_data, 0, 40);
@@ -368,7 +367,7 @@ int Drcom_MISC_HEART_BEAT_01_TYPE_Setter(unsigned char *send_data, char *recv_da
 	return packetlen;
 }
 
-int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(uint8_t *send_data, uint8_t *recv_data)
 {
 	memcpy(&drcom_misc3_flux, recv_data + 16, 4);
 	memset(send_data, 0, 40);
@@ -394,7 +393,7 @@ int Drcom_MISC_HEART_BEAT_03_TYPE_Setter(unsigned char *send_data, char *recv_da
 	return packetlen;
 }
 
-int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(unsigned char *send_data, char *recv_data)
+int Drcom_ALIVE_HEARTBEAT_TYPE_Setter(uint8_t *send_data, uint8_t *recv_data)
 {
 	int packetlen = 0;
 	send_data[packetlen++] = 0xff;

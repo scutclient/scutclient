@@ -29,8 +29,8 @@ const static uint8_t UnicastAddr[6] = {0x01,0xd0,0xf8,0x00,0x00,0x03}; // 单播
 /* 静态变量*/
 static uint8_t send_8021x_data[1024]={0}; // 用于存放发送8021x报文的变量
 static size_t send_8021x_data_len = 0; // 用于存放发送8021x报文的变量的长度
-static unsigned char send_udp_data[ETH_FRAME_LEN] = {0};
-static char recv_udp_data[ETH_FRAME_LEN] = {0};
+static uint8_t send_udp_data[ETH_FRAME_LEN] = {0};
+static uint8_t recv_udp_data[ETH_FRAME_LEN] = {0};
 static int send_udp_data_len = 0; // 用于存放发送udp报文的变量的长度
 static int resev=0; // 是否收到了第一帧报文的标志位，第一帧报文用于拿到服务器的mac
 static int times=AUTH_8021X_RECV_TIMES; // 8021x断链重试次数
@@ -504,7 +504,7 @@ ERR1:
 
 typedef enum {MISC_START_ALIVE=0x01, MISC_RESPONSE_FOR_ALIVE=0x02, MISC_INFO=0x03, MISC_RESPONSE_INFO=0x04, MISC_HEART_BEAT=0x0b, MISC_RESPONSE_HEART_BEAT=0x06} DRCOM_Type;
 typedef enum {MISC_HEART_BEAT_01_TYPE=0x01, MISC_HEART_BEAT_02_TYPE=0x02, MISC_HEART_BEAT_03_TYPE=0x03, MISC_HEART_BEAT_04_TYPE=0x04, MISC_FILE_TYPE=0x06} DRCOM_MISC_HEART_BEAT_Type;
-int Drcom_UDP_Handler(char *recv_data)
+int Drcom_UDP_Handler(uint8_t *recv_data)
 {
 	int data_len = 0;
 	if (recv_data[0] == 0x07) {
