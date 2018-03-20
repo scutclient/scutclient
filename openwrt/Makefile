@@ -8,18 +8,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=scutclient
-CDIR:=$(shell readlink -f ./)
-ifneq (,$(findstring scutclient,$(shell cd $(CDIR) && git remote get-url origin)))
-PKG_VERSION:=$(shell cd $(CDIR) && git describe --tags)
+#If you want to compile your local source code, fill the absolute source path below.
+SRCDIR:=
+ifneq (,$(SRCDIR))
+PKG_VERSION:=$(shell cd $(SRCDIR) && git describe --tags || echo "unknown")
 PKG_RELEASE:=1
-PKG_UNPACK=$(CP) $(CDIR)/../* $(PKG_BUILD_DIR)
+PKG_UNPACK=$(CP) $(SRCDIR)/. $(PKG_BUILD_DIR)
 else
-PKG_VERSION:=2.2-20170325
+PKG_VERSION:=v2.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/scutclient/scutclient.git
-PKG_SOURCE_VERSION:=cdb4fd579aea4adbe4fbb280d8a35fefb738af1b
+PKG_SOURCE_VERSION:=$(PKG_VERSION)
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 endif
