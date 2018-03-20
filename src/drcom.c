@@ -2,11 +2,10 @@
 #include "functions.h"
 
 extern struct in_addr local_ipaddr;
-extern uint8_t	dns[4];
-extern uint8_t	MAC[6];
+extern uint8_t dns[4];
+extern uint8_t MAC[6];
 extern char *UserName;
-
-extern unsigned char		HostName[32];
+extern char HostName[32];
 extern unsigned char		Version[64];
 extern int					Version_len ;
 extern unsigned char		Hash[64] ;

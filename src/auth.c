@@ -12,7 +12,7 @@ extern char *UserName;
 extern char *Password;
 extern char *HookCmd;
 extern char DeviceName[IFNAMSIZ];
-extern unsigned char		HostName[32];
+extern char HostName[32];
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
