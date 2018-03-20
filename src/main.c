@@ -11,7 +11,7 @@ struct sigaction sa_term;
 uint8_t DebugMark = 0;
 struct in_addr local_ipaddr;
 struct in_addr udpserver_ipaddr;
-uint8_t	dns[4] = {222, 201, 130, 30};
+struct in_addr dns_ipaddr;
 uint8_t	MAC[6] = {0};
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 char *UserName;
@@ -68,14 +68,17 @@ int main(int argc, char *argv[])
 			strcpy(DeviceName, optarg);
 		break;
 		case 'n':
-			transIP(optarg, dns);
+			if(!inet_aton(optarg, &dns_ipaddr)) {
+				LogWrite(ERROR, "DNS invalid!");
+				exit(-1);
+			}
 		break;
 		case 't':
 			strcpy(HostName, optarg);
 		break;
 		case 's':
 			if(!inet_aton(optarg, &udpserver_ipaddr)) {
-				LogWrite(ERROR, "Invalid UDP server IP specified!");
+				LogWrite(ERROR, "UDP server IP invalid!");
 				exit(-1);
 			}
 		break;
@@ -119,6 +122,8 @@ int main(int argc, char *argv[])
 		}
 		if(udpserver_ipaddr.s_addr == 0)
 			inet_aton("202.38.210.131", &udpserver_ipaddr);
+		if(dns_ipaddr.s_addr == 0)
+			inet_aton("222.201.130.30", &dns_ipaddr);
 	}
 
 	GetMacOfDevice(DeviceName, MAC);

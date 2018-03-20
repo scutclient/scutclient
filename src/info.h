@@ -36,8 +36,7 @@ static const struct option long_options[] = {
 
 // 默认配置
 
-void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen);
-void transIP( unsigned char *str, uint8_t iphex[] );
+void hexStrToByte(const char* source,unsigned char* dest, int sourceLen);
 int GetMacOfDevice(const char *ifn, uint8_t *mac);
 int GetIPOfDevice(const char *ifn, uint32_t *pip);
 #endif

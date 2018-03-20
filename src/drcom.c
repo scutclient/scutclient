@@ -2,7 +2,7 @@
 #include "functions.h"
 
 extern struct in_addr local_ipaddr;
-extern uint8_t dns[4];
+extern struct in_addr dns_ipaddr;
 extern uint8_t MAC[6];
 extern char *UserName;
 extern char HostName[32];
@@ -273,9 +273,7 @@ int Drcom_MISC_INFO_Setter(unsigned char *send_data, char *recv_data)
 	memset(send_data+packetlen,0x00,32);
 	packetlen += 12;
 	//填DNS
-	//uint8_t dns[4] = {0};
-	//GetWanDnsFromDevice(dns);
-	memcpy(send_data+packetlen, dns, 4);
+	memcpy(send_data+packetlen, (char *)&(dns_ipaddr.s_addr), 4);
 	packetlen += 4;
 	// 第2,3个DNS忽略
 	packetlen += 16;

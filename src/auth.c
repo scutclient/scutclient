@@ -6,7 +6,7 @@
 
 extern struct in_addr udpserver_ipaddr;
 extern struct in_addr local_ipaddr;
-extern uint8_t	dns[4];
+extern struct in_addr dns_ipaddr;
 extern uint8_t	MAC[6];
 extern char *UserName;
 extern char *Password;
@@ -315,7 +315,7 @@ void printIfInfo()
 	// 打印网络信息到前台显示
 	LogWrite(INF,"Hostname: %s",HostName);
 	LogWrite(INF,"IP: %s", inet_ntoa(local_ipaddr));
-	LogWrite(INF,"DNS: %hhu.%hhu.%hhu.%hhu",dns[0],dns[1],dns[2],dns[3]);
+	LogWrite(INF,"DNS: %s", inet_ntoa(dns_ipaddr));
 	LogWrite(INF,"UDP server: %s",inet_ntoa(udpserver_ipaddr));
 	LogWrite(INF,"MAC: %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",MAC[0],MAC[1],MAC[2],MAC[3],MAC[4],MAC[5]);
 }

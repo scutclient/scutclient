@@ -37,7 +37,7 @@ int checkInit( uint8_t info[] ,int infoLen )
 	return result;
 }
 
-void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen)
+void hexStrToByte(const char* source,unsigned char* dest, int sourceLen)
 {
 	short i;
 	unsigned char highByte, lowByte;
@@ -68,29 +68,6 @@ void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen)
 		dest[i / 2] = (highByte << 4) | lowByte;
 	}
 	return ;
-}
-
-void transIP( unsigned char *str, uint8_t iphex[] )
-{
-	unsigned char *p;
-	int count=0;
-	p = strtok(str, ".");
-	if(p != NULL)
-	{
-		iphex[count++] = atol(p);
-		while(1)
-		{
-			p = strtok(NULL, ".");
-			if(p == NULL)
-			{
-				break;
-			}
-			else
-			{
-				iphex[count++] = atol(p);
-			}
-		}
-	}
 }
 
 int GetMacOfDevice(const char *ifn, uint8_t *mac)
