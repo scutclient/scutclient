@@ -93,29 +93,6 @@ void transIP( unsigned char *str, uint8_t iphex[] )
 	}
 }
 
-void transMAC( unsigned char *str, uint8_t MAC[] )
-{
-	unsigned char *p;
-	int count=0;
-	p = strtok(str, ":");
-	if(p != NULL)
-	{
-		MAC[count++] = strtoul(p,0,16);
-		while(1)
-		{
-			p = strtok(NULL, ":");
-			if(p == NULL)
-			{
-				break;
-			}
-			else
-			{
-				MAC[count++] = strtoul(p,0,16);
-			}
-		}
-	}
-}
-
 int GetMacOfDevice(const char *ifn, uint8_t *mac)
 {
 	int fd;

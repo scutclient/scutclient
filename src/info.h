@@ -38,7 +38,6 @@ static const struct option long_options[] = {
 
 void hexStrToByte(unsigned char* source,unsigned  char* dest, int sourceLen);
 void transIP( unsigned char *str, uint8_t iphex[] );
-void transMAC( unsigned char *str, uint8_t MAC[] );
 int GetMacOfDevice(const char *ifn, uint8_t *mac);
 int GetIPOfDevice(const char *ifn, uint32_t *pip);
 #endif
