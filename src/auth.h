@@ -28,6 +28,7 @@
 #define LOGOFF 0 // 下线标志位
 #define SERVER_ADDR "202.38.210.131"
 #define SERVER_PORT 61440
+#define DNS_ADDR "222.201.130.30"
 
 struct sockaddr_ll auth_8021x_addr;
 

@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
 			exit(-1);
 		}
 		if(udpserver_ipaddr.s_addr == 0)
-			inet_aton("202.38.210.131", &udpserver_ipaddr);
+			inet_aton(SERVER_ADDR, &udpserver_ipaddr);
 		if(dns_ipaddr.s_addr == 0)
-			inet_aton("222.201.130.30", &dns_ipaddr);
+			inet_aton(DNS_ADDR, &dns_ipaddr);
 	}
 
 	GetMacOfDevice(DeviceName, MAC);
