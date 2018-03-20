@@ -15,17 +15,6 @@ int trim(char s[])
 	return n;
 }
 
-int checkInitForChar(unsigned char *str )
-{
-	int i =0;
-	int result = 0;
-	for(i=0;i<strlen(str);i++)
-	{
-		result += str[i];
-	}
-	return result;
-}
-
 int checkInit( uint8_t info[] ,int infoLen )
 {
 	int i =0;
