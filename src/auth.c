@@ -44,6 +44,7 @@ static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
 static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
+struct sockaddr_ll auth_8021x_addr;
 // 802.1X 交换机认证失败返回字符串
 static const char * auth_8021x_failed_strs[] = {
 		"Authentication Fail",
@@ -211,7 +212,7 @@ int auth_UDP_Init()
 	return 0;
 }
 
-int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
+int auth_UDP_Sender(uint8_t *send_data, int send_data_len)
 {
 	if (sendto(auth_udp_sock, send_data, send_data_len, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != send_data_len)
 	{
@@ -222,10 +223,12 @@ int auth_UDP_Sender(unsigned char *send_data, int send_data_len)
 	return 1;
 }
 
-int auth_UDP_Receiver(char *recv_data)
+int auth_UDP_Receiver(uint8_t *recv_data)
 {
 	struct sockaddr_in clntaddr;
-	int recv_len, addrlen = sizeof(struct sockaddr_in);
+	socklen_t addrlen = sizeof(struct sockaddr_in);
+	int recv_len;
+
 	recv_len = recvfrom(auth_udp_sock, recv_data, ETH_FRAME_LEN, 0,(struct sockaddr*) &clntaddr, &addrlen);
 	if(recv_len > 0
 	&& memcmp(&clntaddr.sin_addr, &serv_addr.sin_addr, 4) == 0
@@ -237,7 +240,7 @@ int auth_UDP_Receiver(char *recv_data)
 	return 0;
 }
 
-int auth_8021x_Sender(unsigned char *send_data,int send_data_len)
+int auth_8021x_Sender(uint8_t *send_data, int send_data_len)
 {
 	if (sendto(auth_8021x_sock, send_data, send_data_len, 0, (struct sockaddr *)&auth_8021x_addr,  sizeof(auth_8021x_addr)) != send_data_len)
 	{
@@ -249,7 +252,7 @@ int auth_8021x_Sender(unsigned char *send_data,int send_data_len)
 	return 1;
 }
 
-int auth_8021x_Receiver(char *recv_data)
+int auth_8021x_Receiver(uint8_t *recv_data)
 {
 	struct ethhdr *recv_hdr;
 	struct ethhdr *local_ethhdr;
