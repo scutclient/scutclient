@@ -20,25 +20,6 @@ char drcom_misc1_flux[4];
 char drcom_misc3_flux[4];
 uint8_t tailinfo[16];
 
-uint32_t checkCPULittleEndian()
-{
-    union
-    {
-        unsigned int a;
-        unsigned char b;
-    } c;
-    c.a = 1;
-    return (c.b == 1);
-}
-
-uint32_t big2little_32(uint32_t A)
-{
-    return ((((uint32_t)(A) & 0xff000000) >>24) | 
-        (((uint32_t)(A) & 0x00ff0000) >> 8) | 
-        (((uint32_t)(A) & 0x0000ff00) << 8) | 
-        (((uint32_t)(A) & 0x000000ff) << 24));
-}
-
 uint32_t drcom_crc32(uint8_t *data, int data_len)
 {
 	uint32_t ret = 0;
@@ -50,15 +31,9 @@ uint32_t drcom_crc32(uint8_t *data, int data_len)
 	}
 
 	// 大端小端的坑
-	if(checkCPULittleEndian() == 0)
-	{
-		ret = big2little_32(ret);
-	}
+	ret = htole32(ret);
 	ret = (ret * 19680126) & 0xFFFFFFFF;
-	if(checkCPULittleEndian() == 0)
-	{
-		ret = big2little_32(ret);
-	}
+	ret = htole32(ret);
 
 	return ret;
 }
