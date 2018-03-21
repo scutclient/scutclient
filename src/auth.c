@@ -135,11 +135,12 @@ int auth_8021x_Logoff() {
 	uint8_t LogoffCnt = 2;// 发送两次
 	int ret = 0;
 
-	LogWrite(INF,"Client: Send EAPOL Logoff.");
+	LogWrite(INF,"Client: Send Drcom Logoff.");
 	// 客户端发送Logoff后，接收服务器回复
 	while(LogoffCnt--)
 	{
 		send_8021x_data_len = AppendDrcomLogoffPkt(MultcastHeader, send_8021x_data);
+		LogWrite(DEBUG, "Sending logoff packet.");
 		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 		FD_ZERO(&fdR);
 		FD_SET(auth_8021x_sock, &fdR);
@@ -220,6 +221,7 @@ int auth_UDP_Sender(uint8_t *send_data, int send_data_len)
 		LogWrite(ERROR,"auth_UDP_Sender error: %s", strerror(errno));
 		return 0;
 	}
+	PrintHex("UDP packet sent", send_data, send_data_len);
 	return 1;
 }
 
@@ -245,10 +247,10 @@ int auth_8021x_Sender(uint8_t *send_data, int send_data_len)
 	if (sendto(auth_8021x_sock, send_data, send_data_len, 0, (struct sockaddr *)&auth_8021x_addr,  sizeof(auth_8021x_addr)) != send_data_len)
 	{
 		//ret不等于send_data长度报错
-		LogWrite(ERROR,"%s","auth_8021x_Sender failed.");
-		perror("auth_8021x_Sender failed.");
+		LogWrite(ERROR,"auth_8021x_Sender error: %s", strerror(errno));
 		return 0;
 	}
+	PrintHex("802.1X packet sent", send_data, send_data_len);
 	return 1;
 }
 
@@ -348,8 +350,7 @@ void loginToGetServerMAC(uint8_t recv_data[])
 		switch (select(auth_8021x_sock+1, &fdR, NULL, NULL, &tmp_timeout))
 		{
 			case -1:
-				LogWrite(ERROR,"%s","select socket failed.");
-				perror("select socket failed.");
+				LogWrite(ERROR,"Select socket for first packet failed: %s", strerror(errno));
 			break;
 			case 0:
 			break;
@@ -359,7 +360,7 @@ void loginToGetServerMAC(uint8_t recv_data[])
 					if(auth_8021x_Receiver(recv_data))
 					{
 						//已经收到了
-						LogWrite(INF,"%s","Receive the first request.");
+						LogWrite(INF,"%s","Received the first request.");
 						resev = 1;
 						times = AUTH_8021X_RECV_TIMES;
 						// 初始化服务器MAC地址
@@ -476,7 +477,7 @@ int Authentication(int client)
 		if(success_8021x && isNeedHeartBeat && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY))
 		{
 			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,recv_udp_data);
-			LogWrite(INF,"%s%d","UDP Client: Send ALIVE_HEARTBEAT, data len = ",send_udp_data_len);
+			LogWrite(INF,"UDP Client: Send ALIVE_HEARTBEAT.");
 			if(auth_UDP_Sender(send_udp_data, send_udp_data_len) == 0) {
 				ret = -1;
 				break;

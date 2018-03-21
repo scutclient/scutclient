@@ -1,5 +1,6 @@
 #include "drcom.h"
 #include "functions.h"
+#include "tracelog.h"
 
 extern struct in_addr local_ipaddr;
 extern struct in_addr dns_ipaddr;
@@ -54,6 +55,7 @@ void encryptDrcomInfo(unsigned char *info)
 size_t AppendDrcomStartPkt( uint8_t *EthHeader, uint8_t *Packet )
 {
 	size_t packetlen = 0;
+	LogWrite(DEBUG, "Preparing for Start packet...");
 	memset(Packet, 0x00,97);//fill 0x00
 	// Ethernet Header (14 Bytes)
 	memcpy(Packet, EthHeader,14);
@@ -64,8 +66,6 @@ size_t AppendDrcomStartPkt( uint8_t *EthHeader, uint8_t *Packet )
 	Packet[17] = 0x00;
 	packetlen=96;
 
-	PrintHex("Send Start packet", Packet, packetlen);
-
 	return packetlen;
 }
 
@@ -73,6 +73,8 @@ size_t AppendDrcomResponseIdentity(const uint8_t *request, uint8_t *EthHeader, c
 {
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
+
+	LogWrite(DEBUG, "Preparing for Dr.com identity...");
 	memset(Packet, 0x00,97);//fill 0x00
 	uint16_t eaplen;
 	// Fill Ethernet header
@@ -108,8 +110,6 @@ size_t AppendDrcomResponseIdentity(const uint8_t *request, uint8_t *EthHeader, c
 	memcpy(Packet+16, &eaplen, sizeof(eaplen));
 	eaplen = htons(userlen+14);
 	memcpy(Packet+20, &eaplen, sizeof(eaplen));
-	
-	PrintHex("Send Identity", Packet, packetlen);
 
 	return packetlen;
 }
@@ -119,6 +119,8 @@ size_t AppendDrcomResponseMD5(const uint8_t *request, uint8_t *EthHeader, const 
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
 	uint16_t eaplen = 0;
+
+	LogWrite(DEBUG, "Preparing for Dr.com MD5 response...");
 	memset(Packet, 0x00,97);//fill 0x00
 	
 	// Fill Ethernet header
@@ -161,8 +163,6 @@ size_t AppendDrcomResponseMD5(const uint8_t *request, uint8_t *EthHeader, const 
 		packetlen = 96;
 	}
 
-	PrintHex("Send MD5", Packet, packetlen);
-
 	return packetlen;
 }
 
@@ -178,8 +178,6 @@ size_t AppendDrcomLogoffPkt(uint8_t *EthHeader, uint8_t *Packet)
 	Packet[16] = 0x00;// Length=0x0000
 	Packet[17] = 0x00;
 	packetlen=96;
-
-	PrintHex("Send Logoff", Packet, packetlen);
 
 	return packetlen;
 }
