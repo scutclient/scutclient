@@ -17,21 +17,21 @@
 
 // 命令行参数
 static const struct option long_options[] = {
-  {"username", required_argument, NULL, 'u'},
-  {"password", required_argument, NULL, 'p'},
-  {"iface", required_argument, NULL, 'f'},
-  {"dns", required_argument, NULL, 'n'},
-  {"hostname", required_argument, NULL, 't'},
-  {"udp-server", required_argument, NULL, 's'},
-  {"cli-version", required_argument,NULL, 'c'},
-  {"hash", required_argument, NULL, 'h'},
-  {"auth-exec", required_argument, NULL, 'E'},
-  {"debug", optional_argument, NULL, 'D'},
-  {"logoff", no_argument, NULL, 'o'},
-  {NULL, no_argument, NULL, 0}
+	{"username", required_argument, NULL, 'u'},
+	{"password", required_argument, NULL, 'p'},
+	{"iface", required_argument, NULL, 'f'},
+	{"dns", required_argument, NULL, 'n'},
+	{"hostname", required_argument, NULL, 't'},
+	{"udp-server", required_argument, NULL, 's'},
+	{"cli-version", required_argument,NULL, 'c'},
+	{"hash", required_argument, NULL, 'h'},
+	{"auth-exec", required_argument, NULL, 'E'},
+	{"debug", optional_argument, NULL, 'D'},
+	{"logoff", no_argument, NULL, 'o'},
+	{NULL, no_argument, NULL, 0}
 };
 
-void hexStrToByte(const char* source,unsigned char* dest, int sourceLen);
+void hexStrToByte(const char* source, unsigned char* dest, int sourceLen);
 int GetMacOfDevice(const char *ifn, uint8_t *mac);
 int GetIPOfDevice(const char *ifn, uint32_t *pip);
 #endif
