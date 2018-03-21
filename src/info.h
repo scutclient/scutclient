@@ -15,26 +15,21 @@
 #include <netinet/if_ether.h>
 #include <getopt.h>
 
-// 命令行参数 
-// args: 2-optional 1-required 0-noargs
+// 命令行参数
 static const struct option long_options[] = {
-	// must be specificed
-  {"username",  1, NULL, 'u'},
-  {"password",  1, NULL, 'p'},
-  {"iface",     1, NULL, 'f'},
-  {"dns",       1, NULL, 'n'},
-  {"hostname",  1, NULL, 't'},
-  {"udp-server",1, NULL, 's'},
-  {"cli-version",1,NULL, 'c'},
-  {"hash",      1, NULL, 'h'},
-  {"auth-exec", 1, NULL, 'E'},
-  {"debug",     0, NULL, 'D'},
-  {"logoff",    0, NULL, 'o'},
-  {NULL,        0, NULL, 0}
+  {"username", required_argument, NULL, 'u'},
+  {"password", required_argument, NULL, 'p'},
+  {"iface", required_argument, NULL, 'f'},
+  {"dns", required_argument, NULL, 'n'},
+  {"hostname", required_argument, NULL, 't'},
+  {"udp-server", required_argument, NULL, 's'},
+  {"cli-version", required_argument,NULL, 'c'},
+  {"hash", required_argument, NULL, 'h'},
+  {"auth-exec", required_argument, NULL, 'E'},
+  {"debug", optional_argument, NULL, 'D'},
+  {"logoff", no_argument, NULL, 'o'},
+  {NULL, no_argument, NULL, 0}
 };
-
-
-// 默认配置
 
 void hexStrToByte(const char* source,unsigned char* dest, int sourceLen);
 int GetMacOfDevice(const char *ifn, uint8_t *mac);

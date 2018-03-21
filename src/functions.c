@@ -2,7 +2,6 @@
 #include "functions.h"
 #include "tracelog.h"
 #include "md5.h"
-extern uint8_t DebugMark;
 static char hexret[50];
 static char strret[20];
 
@@ -32,16 +31,17 @@ char* GenChrStr(uint8_t *content, size_t len)
 void PrintHex(char *descr, uint8_t *content, size_t len)
 {
 	size_t cptr;
-	if(!DebugMark) return;
+	if(cloglev < DEBUG) return;
 	LogWrite(DEBUG, "%s: Packet length: %lu bytes.", descr, len);
-	LogWrite(DEBUG, "******************************************************************************");
+	if(cloglev < TRACE) return;
+	LogWrite(TRACE, "******************************************************************************");
 	for(cptr = 0;cptr < len;cptr+=16)
 	{
-		LogWrite(DEBUG, "%08x %-49s  |%-16s|", cptr,
+		LogWrite(TRACE, "%08x %-49s  |%-16s|", cptr,
 				GenHexStr(content + cptr, len - cptr),
 				GenChrStr(content + cptr, len - cptr));
 	}
-	LogWrite(DEBUG, "******************************************************************************");
+	LogWrite(TRACE, "******************************************************************************");
 }
 
 void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[], const uint8_t srcMD5[])

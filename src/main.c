@@ -8,7 +8,6 @@
 #include <signal.h>
 
 struct sigaction sa_term;
-uint8_t DebugMark = 0;
 struct in_addr local_ipaddr;
 struct in_addr udpserver_ipaddr;
 struct in_addr dns_ipaddr;
@@ -48,11 +47,11 @@ void handle_term(int signal)
 int main(int argc, char *argv[])
 {
 	int client = 1;
-	int ch;
+	int ch, tmpdbg;
 	uint8_t buf[128];
 
 	// see info.h for more about long_options
-	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:s:c:h:oD",
+	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:s:c:h:oD::",
 									long_options, NULL)) != -1) {
 		switch(ch) {
 		case 'u':
@@ -91,7 +90,16 @@ int main(int argc, char *argv[])
 			Hash = optarg;
 		break;
 		case 'D':
-			DebugMark = 1;
+			if(optarg) {
+				tmpdbg = atoi(optarg);
+				if((tmpdbg < NONE) || (tmpdbg > TRACE)) {
+					LogWrite(ERROR, "Invalid debug level!");
+				} else {
+					cloglev = tmpdbg;
+				}
+			} else {
+				cloglev = DEBUG;
+			}
 		break;
 		case 'o':
 			client = LOGOFF;

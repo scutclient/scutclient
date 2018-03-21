@@ -20,5 +20,6 @@ typedef enum {
 	NONE = 0, ERROR = 1, INF = 2, DEBUG = 3, TRACE = 4
 } LOGLEVEL;
 
+extern LOGLEVEL cloglev;
 int LogWrite(LOGLEVEL loglevel, char *format, ...);
 #endif /* LOGC_H_ */
