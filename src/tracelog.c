@@ -6,8 +6,10 @@ char filepath[MAXFILEPATH] = "/tmp/scutclient.log";
 FILE *logfile;
 LOGLEVEL cloglev = INF;
 
-const static char *LogLevelText[5] =
+const static char *LogLevelText[] =
 		{ "NONE", "ERROR", "INF", "DEBUG", "TRACE" };
+const static char *LogTypeText[] =
+		{ "ALL", "INIT", "8021X", "DRCOM" };
 
 static unsigned long get_file_size(const char *path) {
 	unsigned long filesize = -1;
@@ -28,7 +30,7 @@ static void settime() {
 	strftime(logtime, 20, "%Y-%m-%d %H:%M:%S", localtime(&timer));
 }
 
-static int initlog(LOGLEVEL loglevel) {
+static int initlog(LOGTYPE logtype, LOGLEVEL loglevel) {
 	//获取日志时间
 	settime();
 
@@ -50,21 +52,21 @@ static int initlog(LOGLEVEL loglevel) {
 		return -1;
 	}
 	//写入日志级别，日志时间
-	fprintf(logfile, "[%s] [%s]:[", LogLevelText[loglevel], logtime);
-	printf("[%s] [%s]:[", LogLevelText[loglevel], logtime);
+	fprintf(logfile, "[%s][%-5s][%-3s]:[", logtime, LogTypeText[logtype], LogLevelText[loglevel]);
+	printf("[%s][%-5s][%-3s]:[", logtime, LogTypeText[logtype], LogLevelText[loglevel]);
 	return 0;
 }
 
 /*
  *日志写入
  * */
-int LogWrite(LOGLEVEL loglevel, char *format, ...) {
+int LogWrite(LOGTYPE logtype, LOGLEVEL loglevel, char *format, ...) {
 	va_list args;
 
 	if (loglevel > cloglev)
 		return 0;
 	//初始化日志
-	if (initlog(loglevel) != 0)
+	if (initlog(logtype, loglevel) != 0)
 		return -1;
 	//打印日志信息
 	va_start(args, format);

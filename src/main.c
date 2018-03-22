@@ -37,7 +37,7 @@ void PrintHelp(const char * argn) {
 }
 
 void handle_term(int signal) {
-	LogWrite(INF, "Exiting...");
+	LogWrite(ALL, INF, "Exiting...");
 	auth_8021x_Logoff();
 	exit(0);
 }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'n':
 			if (!inet_aton(optarg, &dns_ipaddr)) {
-				LogWrite(ERROR, "DNS invalid!");
+				LogWrite(INIT, ERROR, "DNS invalid!");
 				exit(-1);
 			}
 			break;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 's':
 			if (!inet_aton(optarg, &udpserver_ipaddr)) {
-				LogWrite(ERROR, "UDP server IP invalid!");
+				LogWrite(INIT, ERROR, "UDP server IP invalid!");
 				exit(-1);
 			}
 			break;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 			if (optarg) {
 				tmpdbg = atoi(optarg);
 				if ((tmpdbg < NONE) || (tmpdbg > TRACE)) {
-					LogWrite(ERROR, "Invalid debug level!");
+					LogWrite(INIT, ERROR, "Invalid debug level!");
 				} else {
 					cloglev = tmpdbg;
 				}
@@ -108,10 +108,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	LogWrite(INF, "##################################");
-	LogWrite(INF, "Powered by Scutclient Project");
-	LogWrite(INF, "Contact us with QQ group 262939451");
-	LogWrite(INF, "##################################");
+	LogWrite(ALL, INF, "##################################");
+	LogWrite(ALL, INF, "Powered by Scutclient Project");
+	LogWrite(ALL, INF, "Contact us with QQ group 262939451");
+	LogWrite(ALL, INF, "##################################");
 
 	if (HostName[0] == 0)
 		gethostname(HostName, sizeof(HostName));
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 		if (GetIPOfDevice(DeviceName, &(local_ipaddr.s_addr)) < 0)
 			exit(-1);
 		if (!(UserName && Password && UserName[0] && Password[0])) {
-			LogWrite(ERROR, "Please specify username and password!");
+			LogWrite(INIT, ERROR, "Please specify username and password!");
 			exit(-1);
 		}
 		if (udpserver_ipaddr.s_addr == 0)

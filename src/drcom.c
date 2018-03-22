@@ -51,7 +51,7 @@ void encryptDrcomInfo(unsigned char *info) {
 
 size_t AppendDrcomStartPkt(uint8_t *EthHeader, uint8_t *Packet) {
 	size_t packetlen = 0;
-	LogWrite(DEBUG, "Preparing for Start packet...");
+	LogWrite(DRCOM, DEBUG, "Preparing Start packet...");
 	memset(Packet, 0x00, 97);  //fill 0x00
 	// Ethernet Header (14 Bytes)
 	memcpy(Packet, EthHeader, 14);
@@ -70,7 +70,7 @@ size_t AppendDrcomResponseIdentity(const uint8_t *request, uint8_t *EthHeader,
 	size_t packetlen = 0;
 	size_t userlen = strlen(UserName);
 
-	LogWrite(DEBUG, "Preparing for Dr.com identity...");
+	LogWrite(DRCOM, DEBUG, "Preparing Dr.com identity...");
 	memset(Packet, 0x00, 97);	//fill 0x00
 	uint16_t eaplen;
 	// Fill Ethernet header
@@ -114,7 +114,7 @@ size_t AppendDrcomResponseMD5(const uint8_t *request, uint8_t *EthHeader,
 	size_t userlen = strlen(UserName);
 	uint16_t eaplen = 0;
 
-	LogWrite(DEBUG, "Preparing for Dr.com MD5 response...");
+	LogWrite(DRCOM, DEBUG, "Preparing Dr.com MD5 response...");
 	memset(Packet, 0x00, 97);	//fill 0x00
 
 	// Fill Ethernet header

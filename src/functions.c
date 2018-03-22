@@ -1,6 +1,5 @@
 #include <ctype.h>
 #include "functions.h"
-#include "tracelog.h"
 #include "md5.h"
 static char hexret[50];
 static char strret[20];
@@ -26,20 +25,20 @@ char* GenChrStr(uint8_t *content, size_t len) {
 	return strret;
 }
 
-void PrintHex(char *descr, uint8_t *content, size_t len) {
+void PrintHex(LOGTYPE logt, char *descr, uint8_t *content, size_t len) {
 	size_t cptr;
 	if (cloglev < DEBUG)
 		return;
-	LogWrite(DEBUG, "%s: Packet length: %lu bytes.", descr, len);
+	LogWrite(logt, DEBUG, "%s: Packet length: %lu bytes.", descr, len);
 	if (cloglev < TRACE)
 		return;
-	LogWrite(TRACE, "******************************************************************************");
+	LogWrite(logt, TRACE, "******************************************************************************");
 	for (cptr = 0; cptr < len; cptr += 16) {
-		LogWrite(TRACE, "%08x %-49s  |%-16s|", cptr,
+		LogWrite(logt, TRACE, "%08x %-49s  |%-16s|", cptr,
 				GenHexStr(content + cptr, len - cptr),
 				GenChrStr(content + cptr, len - cptr));
 	}
-	LogWrite(TRACE, "******************************************************************************");
+	LogWrite(logt, TRACE, "******************************************************************************");
 }
 
 void FillMD5Area(uint8_t digest[], uint8_t id, const char passwd[],

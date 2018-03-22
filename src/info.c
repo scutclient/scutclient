@@ -55,7 +55,7 @@ int GetMacOfDevice(const char *ifn, uint8_t *mac) {
 	strncpy(ifr.ifr_name, ifn, IFNAMSIZ - 1);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
-		LogWrite(ERROR, "%s%s", "Unable to get MAC address of ", ifn);
+		LogWrite(INIT, ERROR, "Unable to get MAC address of %s.", ifn);
 		close(fd);
 		return -1;
 	}
@@ -71,7 +71,7 @@ int GetIPOfDevice(const char *ifn, in_addr_t *pip) {
 	ifr.ifr_addr.sa_family = AF_INET;
 	strncpy(ifr.ifr_name, ifn, IFNAMSIZ - 1);
 	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-		LogWrite(ERROR, "%s%s", "Unable to get IP address of ", ifn);
+		LogWrite(DRCOM, ERROR, "Unable to get IP address of %s", ifn);
 		close(fd);
 		return -1;
 	}
