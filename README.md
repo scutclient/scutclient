@@ -1,12 +1,7 @@
 scutclient
 =================
-Dev branch here. Please use the master branch.  
 
-
-# To-do 
-* Add argument validation
-* Test on other Linux distributions  
-* ...  
+SCUT Dr.com(X) client written in C.
 
 # Compiling
 ## Using automake
