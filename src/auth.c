@@ -47,12 +47,7 @@ static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
 static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
 struct sockaddr_ll auth_8021x_addr;
-// 802.1X 交换机认证失败返回字符串
-static const char * auth_8021x_failed_strs[] = {
-		"Authentication Fail",
-		"userid error",
-		NULL
-};
+
 /* 静态变量*/
 
 typedef enum {
@@ -535,7 +530,8 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 
 	// 带eapol头的总长度
 	uint16_t pkg_len = 0;
-	uint8_t i;
+	const char *errstr;
+
 	memcpy(&pkg_len, recv_data + 20, sizeof(pkg_len));
 	pkg_len = htons(pkg_len);
 
@@ -556,14 +552,13 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 			// 23是data的偏移量，pkg_len-5是减去eapol头部的data的长度
 			// 在信息的最后补0，方便打印
 			recv_data[23 + pkg_len - 5] = 0;
-			LogWrite(DOT1X, INF, "Server: Notification: %s", recv_data + 23);
-			for (i = 0; auth_8021x_failed_strs[i]; i++) {
-				if (!strncmp(auth_8021x_failed_strs[i],
-						(char*) (recv_data + 23),
-						strlen(auth_8021x_failed_strs[i]))) {
-					LogWrite(DOT1X, ERROR, "Authentication failed! Exit.");
-					exit(EXIT_FAILURE);
-				}
+			if ((errstr = DrcomEAPErrParse((const char *) (recv_data + 23))) != NULL) {
+				LogWrite(DOT1X, ERROR, "Server: Authentication failed: %s", errstr);
+				auth_8021x_Logoff();
+				LogWrite(DOT1X, ERROR, "Exit.");
+				exit(EXIT_FAILURE);
+			} else {
+				LogWrite(DOT1X, INF, "Server: Notification: %s", recv_data + 23);
 			}
 			break;
 		case AVAILABLE:

@@ -172,6 +172,53 @@ size_t AppendDrcomLogoffPkt(uint8_t *EthHeader, uint8_t *Packet) {
 	return packetlen;
 }
 
+// Dr.com 802.1X 交换机认证失败Notification字符串
+const char* DrcomEAPErrParse(const char *str) {
+	int errcode;
+	if(!strncmp("userid error", str, 12)) {
+		sscanf(str, "userid error%d", &errcode);
+		switch (errcode) {
+			case 1:
+				return "Account does not exist.";
+			case 2:
+			case 3:
+				return "Username or password invalid.";
+			case 4:
+				return "This account might be expended.";
+			default:
+				return str;
+		}
+	} else if(!strncmp("Authentication Fail", str, 19)) {
+		sscanf(str, "Authentication Fail ErrCode=%d", &errcode);
+		switch (errcode) {
+			case 0:
+				return "Username or password invalid.";
+			case 5:
+				return "This account is suspended.";
+			case 9:
+				return "This account might be expended.";
+			case 11:
+				return "You are not allowed to perform a radius authentication.";
+			case 16:
+				return "You are not allowed to access the internet now.";
+			case 30:
+			case 63:
+				return "No more time available for this account.";
+			default:
+				return str;
+		}
+	} else if(!strncmp("AdminReset", str, 10)) {
+		return str;
+	} else if(strstr(str, "Mac, IP, NASip, PORT")) {
+		return "You are not allowed to login using current IP/MAC address.";
+	} else if(strstr(str, "flowover")) {
+		return "Data usage has reached the limit.";
+	} else if(strstr(str, "In use")) {
+		return "This account is in use.";
+	}
+	return NULL;
+}
+
 int Drcom_MISC_START_ALIVE_Setter(uint8_t *send_data, uint8_t *recv_data) {
 	int packetlen = 0;
 	send_data[packetlen++] = 0x07;
