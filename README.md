@@ -4,29 +4,24 @@ scutclient
 SCUT Dr.com(X) client written in C.
 
 # Compiling
-## Using automake
+## Using automake (for all distribution)
 ```bash
-git clone https://github.com/scutclient/scutclient.git -b dev_rebase
+git clone https://github.com/scutclient/scutclient.git
 cd scutclient
 autoreconf -fi
 ./configure
 make
 ```
 
-To use it,
-```bash
-sudo ./scutclient --username USERNAME --password PASSWORD --iface eth1 --dns 222.201.130.30 --hostname Lenovo-PC --udp-server 202.38.210.131 --cli-version 4472434f4d0096022a --hash 2ec15ad258aee9604b18f2f8114da38db16efd00
-```
-
 ## Using OpenWrt buildroot
 ### Download source code
-To compile the latest stable version, you only need openwrt/Makefile inside scutclient source code so downloading that file is enough.
+To compile the latest stable version, you only need **openwrt** directory in the source code. Buildroot will automatically download the source.
 
 If you want to compile the latest git HEAD, you need to clone the entire repository and checkout to the branch/version you need.
 
 ### Preparation
 #### Using SDK
-Download and extract the SDK you need. For example:
+Download and extract the SDK you need. For example(Snapshots on ar71xx):
 ```bash
 wget http://downloads.openwrt.org/snapshots/targets/ar71xx/generic/openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64.tar.xz
 tar -Jxvf openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64.tar.xz
@@ -44,28 +39,8 @@ cp {SOMEWHERE}/openwrt/Makefile package/scutclient
 ```
 Then you've created a package for the latest stable version.
 
-If you want to compile other version you need to edit the Makefile and change variable SRCDIR (at line 12) to your source code directory. For example:
-```make
-#
-# Copyright (C) 2016-2018 SCUT Router Term
-#
-# This is free software, licensed under the GNU Affero General Public License v3.
-# See /COPYING for more information.
-#
+If you want to compile other version you need to edit the **openwrt/Makefile** and change variable SRCDIR (at line 12) to your source code directory. 
 
-include $(TOPDIR)/rules.mk
-
-PKG_NAME:=scutclient
-#If you want to compile your local source code, fill the absolute source path below.
-SRCDIR:=/some/where/to/scutclient
-ifneq (,$(SRCDIR))
-PKG_VERSION:=$(shell cd $(SRCDIR) && git describe --tags || echo "unknown")
-PKG_RELEASE:=1
-PKG_UNPACK=$(CP) $(SRCDIR)/. $(PKG_BUILD_DIR)
-else
-PKG_VERSION:=v2.2
-PKG_RELEASE:=1
-```
 
 ### Compiling
 #### Using SDK
@@ -81,6 +56,20 @@ The compiled ipk will be placed under **bin** directory.
 #### Using OpenWrt source code
 
 Select **scutclient** under **Network** tab and start building your firmware.
+
+# Usage
+```bash
+./scutclient --username <username> --password <password> [options...]
+ -f, --iface <ifname> Interface to perform authentication.
+ -n, --dns <dns> DNS server address to be sent to UDP server.
+ -t, --hostname <hostname>
+ -s, --udp-server <server>
+ -c, --cli-version <client version>
+ -h, --hash <hash> DrAuthSvr.dll hash value.
+ -E, --auth-exec <command> Command to be execute after EAP authentication success.
+ -D, --debug
+ -o, --logoff
+```
 
 If any advice, open an issue or contact us at SCUT Router Group.
 
