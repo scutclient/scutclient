@@ -11,11 +11,11 @@ PKG_NAME:=scutclient
 #If you want to compile your local source code, fill the absolute source path below.
 SRCDIR:=
 ifneq (,$(SRCDIR))
-PKG_VERSION:=$(shell cd $(SRCDIR) && git describe --tags || echo "unknown")
+PKG_VERSION:=$(shell cd $(SRCDIR) && git describe --tags || echo "debug")
 PKG_RELEASE:=1
 PKG_UNPACK=$(CP) $(SRCDIR)/. $(PKG_BUILD_DIR)
 else
-PKG_VERSION:=v3.0
+PKG_VERSION:=3.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
