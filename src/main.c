@@ -8,10 +8,9 @@
 #include <signal.h>
 
 struct sigaction sa_term;
-struct in_addr local_ipaddr;
 struct in_addr udpserver_ipaddr;
 struct in_addr dns_ipaddr;
-uint8_t MAC[6];
+
 // 反正这里后面都是0应该没什么问题吧。。。（Flag
 char *UserName;
 char *Password;
@@ -116,20 +115,14 @@ int main(int argc, char *argv[]) {
 	if (HostName[0] == 0)
 		gethostname(HostName, sizeof(HostName));
 
-	if (client != LOGOFF) {
-		if (GetIPOfDevice(DeviceName, &(local_ipaddr.s_addr)) < 0)
-			exit(-1);
-		if (!(UserName && Password && UserName[0] && Password[0])) {
-			LogWrite(INIT, ERROR, "Please specify username and password!");
-			exit(-1);
-		}
-		if (udpserver_ipaddr.s_addr == 0)
-			inet_aton(SERVER_ADDR, &udpserver_ipaddr);
-		if (dns_ipaddr.s_addr == 0)
-			inet_aton(DNS_ADDR, &dns_ipaddr);
+	if ((client != LOGOFF) && !((UserName && Password && UserName[0] && Password[0]))) {
+		LogWrite(INIT, ERROR, "Please specify username and password!");
+		exit(-1);
 	}
-
-	GetMacOfDevice(DeviceName, MAC);
+	if (udpserver_ipaddr.s_addr == 0)
+		inet_aton(SERVER_ADDR, &udpserver_ipaddr);
+	if (dns_ipaddr.s_addr == 0)
+		inet_aton(DNS_ADDR, &dns_ipaddr);
 
 	/* 配置退出登录的signal handler */
 	sa_term.sa_handler = &handle_term;

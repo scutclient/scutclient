@@ -4,14 +4,15 @@
 
 /* 静态变量 */
 extern struct in_addr udpserver_ipaddr;
-extern struct in_addr local_ipaddr;
 extern struct in_addr dns_ipaddr;
-extern uint8_t MAC[6];
 extern char *UserName;
 extern char *Password;
 extern char *HookCmd;
 extern char DeviceName[IFNAMSIZ];
 extern char HostName[32];
+
+struct in_addr local_ipaddr;
+uint8_t MAC[6];
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
@@ -64,28 +65,63 @@ typedef enum {
 typedef uint8_t EAP_ID;
 struct sockaddr_in serv_addr, local_addr;
 
-int getAuthIfIndex(int sock) {
+int chkIfUp(int sock) {
 	struct ifreq ifr;
 	bzero(&ifr, sizeof(ifr));
 
-	strcpy(ifr.ifr_name, DeviceName);
+	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ - 1);
 	if (ioctl(sock, SIOCGIFFLAGS, &ifr) < 0) {
 		LogWrite(INIT, ERROR, "ioctl get if_flag error: %s", strerror(errno));
-		return errno;
-	}
-	if (ifr.ifr_ifru.ifru_flags & IFF_RUNNING) {
-		LogWrite(INIT, INF, "%s", "Interface link up.");
-	} else {
-		LogWrite(INIT, ERROR, "%s", "Interface link down. Please check it.");
 		return -1;
 	}
-	//获取接口索引
+	if (ifr.ifr_ifru.ifru_flags & IFF_RUNNING) {
+		LogWrite(INIT, INF, "%s link up.", DeviceName);
+		return 0;
+	} else {
+		LogWrite(INIT, ERROR, "%s link down. Please check it.", DeviceName);
+		return -1;
+	}
+}
+
+int getIfIndex(int sock) {
+	struct ifreq ifr;
+	bzero(&ifr, sizeof(ifr));
+
+	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ - 1);
 	if (ioctl(sock, SIOCGIFINDEX, &ifr) < 0) {
 		LogWrite(INIT, ERROR, "Get interface index error: %s", strerror(errno));
 		return -1;
 	}
 
 	return ifr.ifr_ifindex;
+}
+
+int getIfIP(int sock) {
+	struct ifreq ifr;
+	bzero(&ifr, sizeof(ifr));
+
+	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ - 1);
+	ifr.ifr_addr.sa_family = AF_INET;
+	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
+		LogWrite(DRCOM, ERROR, "Unable to get IP address of %s: %s", DeviceName, strerror(errno));
+		return -1;
+	}
+	local_ipaddr = (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr);
+	return 0;
+}
+
+int getIfMAC(int sock) {
+	struct ifreq ifr;
+
+	bzero(&ifr, sizeof(ifr));
+	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ - 1);
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	if (ioctl(sock, SIOCGIFHWADDR, &ifr) < 0) {
+		LogWrite(INIT, ERROR, "Unable to get MAC address of %s: %s", DeviceName, strerror(errno));
+		return -1;
+	}
+	memcpy(MAC, ifr.ifr_hwaddr.sa_data, 6);
+	return 0;
 }
 
 int auth_8021x_Init() {
@@ -106,7 +142,13 @@ int auth_8021x_Init() {
 		goto ERR;
 	}
 
-	if ((ret = getAuthIfIndex(auth_8021x_sock)) < 0) {
+	if ((ret = chkIfUp(auth_8021x_sock)) < 0) {
+		goto ERR;
+	}
+	if ((ret = getIfMAC(auth_8021x_sock)) < 0) {
+		goto ERR;
+	}
+	if ((ret = getIfIndex(auth_8021x_sock)) < 0) {
 		goto ERR;
 	}
 
@@ -379,7 +421,6 @@ int Authentication(int client) {
 		exit(EXIT_FAILURE);
 	}
 	initAuthenticationInfo();
-	printIfInfo();
 	ret = auth_8021x_Logoff();
 	if (client == LOGOFF) {
 		close(auth_8021x_sock);
@@ -393,6 +434,10 @@ int Authentication(int client) {
 		goto ERR1;
 	}
 
+	if ((ret = getIfIP(auth_8021x_sock)) < 0) {
+		goto ERR1;
+	}
+	printIfInfo();
 	if ((ret = auth_UDP_Init()) != 0) {
 		LogWrite(DRCOM, ERROR, "Unable to initialize UDP socket.");
 		goto ERR1;

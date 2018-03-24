@@ -32,7 +32,5 @@ static const struct option long_options[] = {
 };
 
 void hexStrToByte(const char* source, unsigned char* dest, int sourceLen);
-int GetMacOfDevice(const char *ifn, uint8_t *mac);
-int GetIPOfDevice(const char *ifn, uint32_t *pip);
 #endif
 
