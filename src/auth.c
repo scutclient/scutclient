@@ -15,6 +15,7 @@ struct in_addr local_ipaddr;
 uint8_t MAC[6];
 
 #define DRCOM_UDP_HEARTBEAT_DELAY  12 // Drcom客户端心跳延时秒数，默认12秒
+#define DRCOM_UDP_HEARTBEAT_TIMEOUT 2 // Drcom客户端心跳超时秒数
 #define DRCOM_UDP_RECV_DELAY  2 // Drcom客户端收UDP报文延时秒数，默认2秒
 #define AUTH_8021X_LOGOFF_DELAY 500000 // 客户端退出登录收包等待时间 0.5秒（50万微秒)
 #define AUTH_8021X_RECV_DELAY  1 // 客户端收8021x报文延时秒数，默认1秒
@@ -480,24 +481,24 @@ int Authentication(int client) {
 			break;
 		}
 		// 如果8021x协议认证成功并且心跳时间间隔大于设定值,则发送一次心跳
-		if (success_8021x && isNeedHeartBeat
-				&& (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY)) {
-			if (lastHBDone == 0) {
+		if (success_8021x && isNeedHeartBeat) {
+			if ((lastHBDone == 0) && (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_TIMEOUT)) {
 				// 认为已经掉线
-				LogWrite(DRCOM, ERROR, "Client: No response to last heartbeat.");
+				LogWrite(DRCOM, ERROR,	"Client: No response to last heartbeat.");
 				ret = 1; //重拨
 				break;
 			}
-			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,
-					recv_udp_data);
-			LogWrite(DRCOM, INF, "Client: Send alive heartbeat.");
-			if (auth_UDP_Sender(send_udp_data, send_udp_data_len) == 0) {
-				ret = 1; //重拨
-				break;
+			if (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY) {
+				send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter( send_udp_data, recv_udp_data);
+				LogWrite(DRCOM, INF, "Client: Send alive heartbeat.");
+				if (auth_UDP_Sender(send_udp_data, send_udp_data_len) == 0) {
+					ret = 1; //重拨
+					break;
+				}
+				// 发送后记下基线时间，开始重新计时心跳时间
+				BaseHeartbeatTime = time(NULL);
+				lastHBDone = 0;
 			}
-			// 发送后记下基线时间，开始重新计时心跳时间
-			BaseHeartbeatTime = time(NULL);
-			lastHBDone = 0;
 		}
 
 	}
