@@ -135,6 +135,6 @@ int main(int argc, char *argv[]) {
 	while(Authentication(client) == 1) {
 		LogWrite(ALL, INF, "Restart authentication.");
 	}
-
+	LogWrite(ALL, ERROR, "Exit.");
 	return 0;
 }

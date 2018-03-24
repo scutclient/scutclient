@@ -103,7 +103,7 @@ int getIfIP(int sock) {
 	strncpy(ifr.ifr_name, DeviceName, IFNAMSIZ - 1);
 	ifr.ifr_addr.sa_family = AF_INET;
 	if (ioctl(sock, SIOCGIFADDR, &ifr) < 0) {
-		LogWrite(DRCOM, ERROR, "Unable to get IP address of %s: %s", DeviceName, strerror(errno));
+		LogWrite(INIT, ERROR, "Unable to get IP address of %s: %s", DeviceName, strerror(errno));
 		return -1;
 	}
 	local_ipaddr = (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr);
@@ -377,7 +377,8 @@ void loginToGetServerMAC(uint8_t recv_data[]) {
 					times = AUTH_8021X_RECV_TIMES;
 					// 初始化服务器MAC地址
 					memcpy(EthHeader, recv_data + 6, 6);
-					auth_8021x_Handler(recv_data);
+					if(auth_8021x_Handler(recv_data))
+						exit(EXIT_FAILURE); //这里不需要考虑重拨的问题，正常第一个请求是Identity，不会失败。
 					return;
 				} else {
 					continue;
@@ -463,7 +464,9 @@ int Authentication(int client) {
 		default:
 			if (FD_ISSET(auth_8021x_sock, &fdR)) {
 				if (auth_8021x_Receiver(recv_8021x_buf)) {
-					auth_8021x_Handler(recv_8021x_buf);
+					if((ret = auth_8021x_Handler(recv_8021x_buf)) != 0) {
+						resev = 0;
+					}
 				}
 			}
 			if (FD_ISSET(auth_udp_sock, &fdR)) {
@@ -569,7 +572,7 @@ int Drcom_UDP_Handler(uint8_t *recv_data) {
 	return data_len;
 }
 
-void auth_8021x_Handler(uint8_t recv_data[]) {
+int auth_8021x_Handler(uint8_t recv_data[]) {
 	// 根据收到的Request，回复相应的Response包
 
 	// 带eapol头的总长度
@@ -598,9 +601,7 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 			recv_data[23 + pkg_len - 5] = 0;
 			if ((errstr = DrcomEAPErrParse((const char *) (recv_data + 23))) != NULL) {
 				LogWrite(DOT1X, ERROR, "Server: Authentication failed: %s", errstr);
-				auth_8021x_Logoff();
-				LogWrite(DOT1X, ERROR, "Exit.");
-				exit(EXIT_FAILURE);
+				return -1;
 			} else {
 				LogWrite(DOT1X, INF, "Server: Notification: %s", recv_data + 23);
 			}
@@ -618,7 +619,7 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 			LogWrite(DOT1X, ERROR, "Unexpected request type (0x%02hhx). Pls report it.",
 					(EAP_Type) recv_data[22]);
 			LogWrite(DOT1X, ERROR, "Exit.");
-			exit(EXIT_FAILURE);
+			return -1;
 			break;
 		}
 	} else if ((EAP_Code) recv_data[18] == FAILURE) {
@@ -627,15 +628,11 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 		isNeedHeartBeat = 0;
 		uint8_t errtype = recv_data[22];
 		LogWrite(DOT1X, ERROR, "Server: Failure.");
-		// TODO:暂时不自动重拨
-		//times = 0;
 		if (times > 0) {
 			times--;
 			sleep(AUTH_8021X_RECV_DELAY);
 			/* 主动发起认证会话 */
-			send_8021x_data_len = appendStartPkt(EthHeader);
-			LogWrite(DOT1X, ERROR, "Server: errtype = 0x%02hhx", errtype);
-			LogWrite(DOT1X, INF, "Client: Multcast Restart.");
+			return 1;
 		} else {
 			LogWrite(DOT1X, ERROR, "Reconnection failed. Server: errtype=0x%02hhx", errtype);
 			exit(EXIT_FAILURE);
@@ -657,5 +654,5 @@ void auth_8021x_Handler(uint8_t recv_data[]) {
 	if (send_8021x_data_len > 0) {
 		auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 	}
-	return;
+	return 0;
 }

@@ -33,7 +33,7 @@
 size_t appendResponseIdentity(const uint8_t request[]);
 size_t appendResponseMD5(const uint8_t request[]);
 size_t appendStartPkt(uint8_t header[]);
-void auth_8021x_Handler(uint8_t recv_data[]);
+int auth_8021x_Handler(uint8_t recv_data[]);
 int auth_8021x_Init();
 int auth_8021x_Logoff();
 int auth_8021x_Receiver(uint8_t *recv_data);
