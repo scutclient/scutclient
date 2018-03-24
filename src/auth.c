@@ -45,7 +45,7 @@ static uint8_t UnicastHeader[14] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
 static time_t BaseHeartbeatTime = 0;  // UDP心跳基线时间
 static int auth_8021x_sock = 0; // 8021x的socket描述符
 static int auth_udp_sock = 0; // udp的socket描述符
-static int client_udp_heartbeat_sent_cnt = 0;	// 记录客户端发送心跳但没收到服务器响应的次数，过多就退出
+static uint8_t lastHBDone = 1;	// 记录上次心跳是否成功结束，没有的话重拨
 struct sockaddr_ll auth_8021x_addr;
 
 /* 静态变量*/
@@ -434,23 +434,22 @@ int Authentication(int client) {
 		// 如果8021x协议认证成功并且心跳时间间隔大于设定值,则发送一次心跳
 		if (success_8021x && isNeedHeartBeat
 				&& (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY)) {
+			if (lastHBDone == 0) {
+				// 认为已经掉线
+				LogWrite(DRCOM, ERROR, "Client: No response to last heartbeat.");
+				ret = 1; //重拨
+				break;
+			}
 			send_udp_data_len = Drcom_ALIVE_HEARTBEAT_TYPE_Setter(send_udp_data,
 					recv_udp_data);
 			LogWrite(DRCOM, INF, "Client: Send alive heartbeat.");
 			if (auth_UDP_Sender(send_udp_data, send_udp_data_len) == 0) {
-				ret = -1;
+				ret = 1; //重拨
 				break;
 			}
 			// 发送后记下基线时间，开始重新计时心跳时间
 			BaseHeartbeatTime = time(NULL);
-			// 发送 发起心跳的包 的计数
-			client_udp_heartbeat_sent_cnt++;
-			if (client_udp_heartbeat_sent_cnt > 3) {
-				// 认为已经掉线
-				LogWrite(DRCOM, ERROR, "Client: No response to last %d heartbeats.", client_udp_heartbeat_sent_cnt);
-				ret = -1;
-				resev = 0;
-			}
+			lastHBDone = 0;
 		}
 
 	}
@@ -497,6 +496,7 @@ int Drcom_UDP_Handler(uint8_t *recv_data) {
 			case MISC_HEART_BEAT_04_TYPE:
 				// 收到这个包代表完成一次心跳流程，这里要初始化时间基线，开始计时下次心跳
 				BaseHeartbeatTime = time(NULL);
+				lastHBDone = 1;
 				LogWrite(DRCOM, INF, "Server: MISC_HEART_BEAT_04. Waiting next heart beat cycle.");
 				break;
 			default:
@@ -507,7 +507,6 @@ int Drcom_UDP_Handler(uint8_t *recv_data) {
 			break;
 		case MISC_RESPONSE_HEART_BEAT:
 			data_len = Drcom_MISC_HEART_BEAT_01_TYPE_Setter(send_udp_data, recv_data);
-			client_udp_heartbeat_sent_cnt = 0;
 			LogWrite(DRCOM, INF, "Server: MISC_RESPONSE_HEART_BEAT. Send MISC_HEART_BEAT_01.");
 			break;
 		default:

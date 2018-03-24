@@ -139,7 +139,9 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGINT, &sa_term, NULL);
 
 	/* 调用子函数完成802.1X认证 */
-	Authentication(client);
+	while(Authentication(client) == 1) {
+		LogWrite(ALL, INF, "Restart authentication.");
+	}
 
 	return 0;
 }
