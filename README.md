@@ -15,7 +15,7 @@ make
 
 ## Using OpenWrt buildroot
 ### Download source code
-To compile the latest stable version, you only need **openwrt** directory in the source code. Buildroot will automatically download the source.
+To compile the latest stable version, you only need **openwrt/Makefile** in the source code. Buildroot will automatically download the source.
 
 If you want to compile the latest git HEAD, you need to clone the entire repository and checkout to the branch/version you need.
 
