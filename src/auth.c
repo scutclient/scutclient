@@ -225,6 +225,13 @@ int auth_UDP_Init() {
 		return -1;
 	}
 
+	if ((setsockopt(auth_udp_sock, SOL_SOCKET, SO_BINDTODEVICE, DeviceName,
+			strlen(DeviceName))) < 0) {
+		LogWrite(DRCOM, ERROR, "Bind UDP socket to device failed: %s", strerror(errno));
+		close(auth_udp_sock);
+		return -1;
+	}
+
 	bzero(&serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 
@@ -239,7 +246,7 @@ int auth_UDP_Init() {
 
 	if (bind(auth_udp_sock, (struct sockaddr *) &(local_addr),
 			sizeof(local_addr)) < 0) {
-		LogWrite(DRCOM, ERROR, "Unable to bind to UDP socket: %s", strerror(errno));
+		LogWrite(DRCOM, ERROR, "Bind UDP socket to IP failed: %s", strerror(errno));
 		close(auth_udp_sock);
 		return -1;
 	}
