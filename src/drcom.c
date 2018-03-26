@@ -1,15 +1,9 @@
 #include "drcom.h"
 #include "functions.h"
-#include "tracelog.h"
+#include "info.h"
 
 extern struct in_addr local_ipaddr;
-extern struct in_addr dns_ipaddr;
 extern uint8_t MAC[6];
-extern char *UserName;
-extern char HostName[32];
-extern char *Hash;
-extern unsigned char Version[64];
-extern int Version_len;
 
 typedef enum {REQUEST=1, RESPONSE=2, SUCCESS=3, FAILURE=4, H3CDATA=10} EAP_Code;
 typedef enum {IDENTITY=1, NOTIFICATION=2, MD5=4, AVAILABLE=20, ALLOCATED=7} EAP_Type;

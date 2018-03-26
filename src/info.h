@@ -15,8 +15,16 @@
 #include <netinet/if_ether.h>
 #include <getopt.h>
 
-// 命令行参数
-
+extern struct in_addr udpserver_ipaddr;
+extern struct in_addr dns_ipaddr;
+extern char *UserName;
+extern char *Password;
+extern char *HookCmd;
+extern char DeviceName[IFNAMSIZ];
+extern char HostName[32];
+extern char *Hash;
+extern unsigned char Version[64];
+extern int Version_len;
 
 void hexStrToByte(const char* source, unsigned char* dest, int sourceLen);
 #endif

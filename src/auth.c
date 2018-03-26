@@ -2,15 +2,6 @@
 #include "tracelog.h"
 #include "info.h"
 
-/* 静态变量 */
-extern struct in_addr udpserver_ipaddr;
-extern struct in_addr dns_ipaddr;
-extern char *UserName;
-extern char *Password;
-extern char *HookCmd;
-extern char DeviceName[IFNAMSIZ];
-extern char HostName[32];
-
 struct in_addr local_ipaddr;
 uint8_t MAC[6];
 

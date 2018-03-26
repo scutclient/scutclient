@@ -8,18 +8,6 @@
 #include <signal.h>
 
 struct sigaction sa_term;
-struct in_addr udpserver_ipaddr;
-struct in_addr dns_ipaddr;
-
-// 反正这里后面都是0应该没什么问题吧。。。（Flag
-char *UserName;
-char *Password;
-char *HookCmd;
-char DeviceName[IFNAMSIZ] = "eth0";
-char HostName[32];
-char *Hash = "2ec15ad258aee9604b18f2f8114da38db16efd00";
-unsigned char Version[64] = { 0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a };
-int Version_len = 9;
 
 // 命令行参数列表
 static const struct option long_options[] = {
