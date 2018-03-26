@@ -21,6 +21,22 @@ char *Hash = "2ec15ad258aee9604b18f2f8114da38db16efd00";
 unsigned char Version[64] = { 0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a };
 int Version_len = 9;
 
+// 命令行参数列表
+static const struct option long_options[] = {
+	{"username", required_argument, NULL, 'u'},
+	{"password", required_argument, NULL, 'p'},
+	{"iface", required_argument, NULL, 'f'},
+	{"dns", required_argument, NULL, 'n'},
+	{"hostname", required_argument, NULL, 't'},
+	{"udp-server", required_argument, NULL, 's'},
+	{"cli-version", required_argument,NULL, 'c'},
+	{"hash", required_argument, NULL, 'h'},
+	{"auth-exec", required_argument, NULL, 'E'},
+	{"debug", optional_argument, NULL, 'D'},
+	{"logoff", no_argument, NULL, 'o'},
+	{NULL, no_argument, NULL, 0}
+};
+
 void PrintHelp(const char * argn) {
 	printf("Usage: %s --username <username> --password <password> [options...]\n"
 		" -f, --iface <ifname> Interface to perform authentication.\n"
@@ -46,7 +62,6 @@ int main(int argc, char *argv[]) {
 	int ch, tmpdbg;
 	uint8_t buf[128];
 
-	// see info.h for more about long_options
 	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:s:c:h:oD::",
 			long_options, NULL)) != -1) {
 		switch (ch) {
