@@ -484,6 +484,8 @@ int Authentication(int client) {
 				// 认为已经掉线
 				LogWrite(DRCOM, ERROR,	"Client: No response to last heartbeat.");
 				ret = 1; //重拨
+				success_8021x = 0;
+				resev = 0;
 				break;
 			}
 			if (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY) {
