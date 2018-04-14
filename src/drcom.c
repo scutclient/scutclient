@@ -13,6 +13,7 @@ static uint8_t crc_md5_info[16];
 static int drcom_package_id = 0;  // 包的id，每次自增1
 char drcom_misc1_flux[4];
 char drcom_misc3_flux[4];
+uint8_t timeNotAllowed = 0;
 uint8_t tailinfo[16];
 
 uint32_t drcom_crc32(uint8_t *data, int data_len) {
@@ -194,6 +195,7 @@ const char* DrcomEAPErrParse(const char *str) {
 			case 11:
 				return "You are not allowed to perform a radius authentication.";
 			case 16:
+				timeNotAllowed = 1;
 				return "You are not allowed to access the internet now.";
 			case 30:
 			case 63:

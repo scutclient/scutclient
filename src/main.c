@@ -18,6 +18,7 @@ static const struct option long_options[] = {
 	{"hostname", required_argument, NULL, 't'},
 	{"udp-server", required_argument, NULL, 's'},
 	{"cli-version", required_argument,NULL, 'c'},
+	{"net-time", required_argument,NULL, 'T'},
 	{"hash", required_argument, NULL, 'h'},
 	{"auth-exec", required_argument, NULL, 'E'},
 	{"debug", optional_argument, NULL, 'D'},
@@ -48,9 +49,13 @@ void handle_term(int signal) {
 int main(int argc, char *argv[]) {
 	int client = 1;
 	int ch, tmpdbg;
+	uint8_t a_hour = 255, a_minute = 255;
 	uint8_t buf[128];
+	int ret;
+	time_t ctime;
+	struct tm * cltime;
 
-	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:s:c:h:oD::",
+	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:T:s:c:h:oD::",
 			long_options, NULL)) != -1) {
 		switch (ch) {
 		case 'u':
@@ -77,6 +82,12 @@ int main(int argc, char *argv[]) {
 		case 's':
 			if (!inet_aton(optarg, &udpserver_ipaddr)) {
 				LogWrite(INIT, ERROR, "UDP server IP invalid!");
+				exit(-1);
+			}
+			break;
+		case 'T':
+			if((sscanf(optarg, "%hhd:%hhd", &a_hour, &a_minute) != 2) || (a_hour >= 24) || (a_minute >= 60)) {
+				LogWrite(INIT, ERROR, "Time invalid!");
 				exit(-1);
 			}
 			break;
@@ -135,8 +146,23 @@ int main(int argc, char *argv[]) {
 	sigaction(SIGINT, &sa_term, NULL);
 
 	/* 调用子函数完成802.1X认证 */
-	while(Authentication(client) == 1) {
-		LogWrite(ALL, INF, "Restart authentication.");
+	while(1) {
+		ret = Authentication(client);
+		if(ret == 1) {
+			LogWrite(ALL, INF, "Restart authentication.");
+		} else if(timeNotAllowed && (a_minute < 60)) {
+			timeNotAllowed = 0;
+			ctime = time(NULL);
+			cltime = localtime(&ctime);
+			if(((int)a_hour * 60 + a_minute) > ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) {
+				LogWrite(ALL, INF, "Waiting till %hhd:%hhd. Have a good sleep...", a_hour, a_minute);
+				sleep((((int)a_hour * 60 + a_minute) - ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) * 60 - cltime -> tm_sec);
+			} else {
+				break;
+			}
+		} else {
+			break;
+		}
 	}
 	LogWrite(ALL, ERROR, "Exit.");
 	return 0;

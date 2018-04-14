@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 extern uint8_t tailinfo[16];
+extern uint8_t timeNotAllowed;
 
 size_t AppendDrcomLogoffPkt(uint8_t *EthHeader, uint8_t *Packet);
 size_t AppendDrcomResponseIdentity(const uint8_t *request, uint8_t *EthHeader,
