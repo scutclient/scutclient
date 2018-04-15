@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 'T':
-			if((sscanf(optarg, "%hhd:%hhd", &a_hour, &a_minute) != 2) || (a_hour >= 24) || (a_minute >= 60)) {
+			if((sscanf(optarg, "%hhu:%hhu", &a_hour, &a_minute) != 2) || (a_hour >= 24) || (a_minute >= 60)) {
 				LogWrite(INIT, ERROR, "Time invalid!");
 				exit(-1);
 			}
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
 			ctime = time(NULL);
 			cltime = localtime(&ctime);
 			if(((int)a_hour * 60 + a_minute) > ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) {
-				LogWrite(ALL, INF, "Waiting till %hhd:%hhd. Have a good sleep...", a_hour, a_minute);
+				LogWrite(ALL, INF, "Waiting till %02hhd:%02hhd. Have a good sleep...", a_hour, a_minute);
 				sleep((((int)a_hour * 60 + a_minute) - ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) * 60 - cltime -> tm_sec);
 			} else {
 				break;
