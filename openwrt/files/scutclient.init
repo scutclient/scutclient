@@ -19,6 +19,7 @@ scutclient_validate_drcom() {
 		'server_auth_ip:ip4addr:202.38.210.131' \
 		'version:string:4472434f4d0096022a' \
 		'authexe:string' \
+		'nettime:string' \
 		'hash:string:2ec15ad258aee9604b18f2f8114da38db16efd00' || exit 1
 }
 
@@ -65,6 +66,7 @@ scutclient_start_instance() {
 		--hash "$hash"
 	[ "$debug" -ge 1 ] && procd_append_param command --debug
 	[ -n "$authexe" ] && procd_append_param command --auth-exec "$authexe"
+	[ -n "$nettime" ] && procd_append_param command --net-time "$nettime"
 	procd_close_instance
 }
 
@@ -103,7 +105,7 @@ service_triggers() {
 }
 
 start_service() {
-	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname authexe
+	local dns hostname server_auth_ip version hash username password enable debug plugin_redial ifname authexe nettime
 	scutclient_load_config
 	[ $enable -eq 0 ] && exit
 	config_foreach scutclient_start_instance scutclient
