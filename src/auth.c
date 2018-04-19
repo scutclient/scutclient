@@ -486,6 +486,7 @@ int Authentication(int client) {
 				ret = 1; //重拨
 				success_8021x = 0;
 				resev = 0;
+				lastHBDone = 1;
 				break;
 			}
 			if (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY) {
