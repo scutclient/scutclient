@@ -394,14 +394,13 @@ void loginToGetServerMAC(uint8_t recv_data[]) {
 
 		times--;
 
-		// 当之前广播的时候，设置为多播
 		if (send_8021x_data[1] == 0xff) {
+			// 当之前广播的时候，设置为多播
 			send_8021x_data_len = appendStartPkt(MultcastHeader);
 			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 			LogWrite(DOT1X, INF, "Client: Multcast Start.");
-		}
-		// 当之前多播的时候，设置为广播
-		else if (send_8021x_data[1] == 0x80) {
+		} else if (send_8021x_data[1] == 0x80) {
+			// 当之前多播的时候，设置为广播
 			send_8021x_data_len = appendStartPkt(BroadcastHeader);
 			auth_8021x_Sender(send_8021x_data, send_8021x_data_len);
 			LogWrite(DOT1X, INF, "Client: Broadcast Start.");
