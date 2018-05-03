@@ -483,9 +483,6 @@ int Authentication(int client) {
 				// 认为已经掉线
 				LogWrite(DRCOM, ERROR,	"Client: No response to last heartbeat.");
 				ret = 1; //重拨
-				success_8021x = 0;
-				resev = 0;
-				lastHBDone = 1;
 				break;
 			}
 			if (time(NULL) - BaseHeartbeatTime > DRCOM_UDP_HEARTBEAT_DELAY) {
@@ -503,6 +500,9 @@ int Authentication(int client) {
 
 	}
 
+	success_8021x = 0;
+	resev = 0;
+	lastHBDone = 1;
 	close(auth_udp_sock);
 	auth_8021x_Logoff();
 ERR1:
@@ -521,6 +521,10 @@ int Drcom_UDP_Handler(uint8_t *recv_data) {
 		case MISC_RESPONSE_FOR_ALIVE:
 			// 一秒后才回复
 			sleep(1);
+			//ALIVE已经回复，关闭心跳计时
+			isNeedHeartBeat = 0;
+			BaseHeartbeatTime = time(NULL);
+			lastHBDone = 1;
 			data_len = Drcom_MISC_INFO_Setter(send_udp_data, recv_data);
 			LogWrite(DRCOM, INF,"Server: MISC_RESPONSE_FOR_ALIVE. Send MISC_INFO.");
 			break;
@@ -649,6 +653,10 @@ int auth_8021x_Handler(uint8_t recv_data[]) {
 		if (HookCmd) {
 			system(HookCmd);
 		}
+		//使用心跳超时相关代码判断MISC_START_ALIVE是否超时
+		isNeedHeartBeat = 1;
+		BaseHeartbeatTime = time(NULL);
+		lastHBDone = 0;
 		auth_UDP_Sender(send_udp_data, send_udp_data_len);
 	}
 	// 只有大于0才发送
