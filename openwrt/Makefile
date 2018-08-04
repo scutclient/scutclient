@@ -28,11 +28,10 @@ endif
 PKG_MAINTAINER:=Scutclient Project
 
 PKG_LICENSE:=AGPL-3.0
-
-PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/scutclient
   SECTION:=net
