@@ -8,8 +8,8 @@ SCUT Dr.com(X) client written in C.
 ```bash
 git clone https://github.com/scutclient/scutclient.git
 cd scutclient
-autoreconf -fi
-./configure
+mkdir build && cd build
+cmake ..
 make
 ```
 
@@ -23,7 +23,7 @@ If you want to compile the latest git HEAD, you need to clone the entire reposit
 #### Using SDK
 Download and extract the SDK you need. For example(Snapshots on ar71xx):
 ```bash
-wget http://downloads.openwrt.org/snapshots/targets/ar71xx/generic/openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64.tar.xz
+wget https://downloads.openwrt.org/snapshots/targets/ar71xx/generic/openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64.tar.xz
 tar -Jxvf openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64.tar.xz
 cd openwrt-sdk-ar71xx-generic_gcc-5.5.0_musl.Linux-x86_64
 ```
@@ -35,7 +35,7 @@ Nothing to do here.
 Create a directory called scutclient inside your package directory and copy openwrt/Makefile into it. (Of course this can be done using GUI file manager :D )
 ```bash
 mkdir package/scutclient
-cp {SOMEWHERE}/openwrt/Makefile package/scutclient
+cp {SCUTCLIENT_SRC_DIR}/openwrt/Makefile package/scutclient
 ```
 Then you've created a package for the latest stable version.
 
