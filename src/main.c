@@ -47,11 +47,7 @@ void handle_term(int signal) {
 }
 
 int main(int argc, char *argv[]) {
-	char buildinfo[60] = "scutclient build at ";
-	strcat(buildinfo,__DATE__);
-	strcat(buildinfo," ");
-	strcat(buildinfo,__TIME__);
-	LogWrite(ALL, INF, buildinfo);
+	LogWrite(ALL, INF, "scutclient built at: " __DATE__ " " __TIME__);
 	LogWrite(ALL, INF, "Authored by Scutclient Project");
 	LogWrite(ALL, INF, "Source code available at https://github.com/scutclient/scutclient");
 	LogWrite(ALL, INF, "Contact us with QQ group 262939451");
