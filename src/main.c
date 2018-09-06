@@ -13,9 +13,9 @@ struct sigaction sa_term;
 static const struct option long_options[] = {
 	{"username", required_argument, NULL, 'u'},
 	{"password", required_argument, NULL, 'p'},
-	{"iface", required_argument, NULL, 'f'},
+	{"iface", required_argument, NULL, 'i'},
 	{"dns", required_argument, NULL, 'n'},
-	{"hostname", required_argument, NULL, 't'},
+	{"hostname", required_argument, NULL, 'H'},
 	{"udp-server", required_argument, NULL, 's'},
 	{"cli-version", required_argument,NULL, 'c'},
 	{"net-time", required_argument,NULL, 'T'},
@@ -28,9 +28,9 @@ static const struct option long_options[] = {
 
 void PrintHelp(const char * argn) {
 	printf("Usage: %s --username <username> --password <password> [options...]\n"
-		" -f, --iface <ifname> Interface to perform authentication.\n"
+		" -i, --iface <ifname> Interface to perform authentication.\n"
 		" -n, --dns <dns> DNS server address to be sent to UDP server.\n"
-		" -t, --hostname <hostname>\n"
+		" -H, --hostname <hostname>\n"
 		" -s, --udp-server <server>\n"
 		" -c, --cli-version <client version>\n"
 		" -h, --hash <hash> DrAuthSvr.dll hash value.\n"
