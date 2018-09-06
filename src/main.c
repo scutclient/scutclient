@@ -33,6 +33,7 @@ void PrintHelp(const char * argn) {
 		" -H, --hostname <hostname>\n"
 		" -s, --udp-server <server>\n"
 		" -c, --cli-version <client version>\n"
+		" -T, --net-time <time> The time you are allowed to access internet. e.g. 6:10\n"
 		" -h, --hash <hash> DrAuthSvr.dll hash value.\n"
 		" -E, --auth-exec <command> Command to be execute after EAP authentication success.\n"
 		" -D, --debug\n"
