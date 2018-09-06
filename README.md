@@ -59,14 +59,16 @@ Select **scutclient** under **Network** tab and start building your firmware.
 
 # Usage
 ```bash
-./scutclient --username <username> --password <password> [options...]
- -f, --iface <ifname> Interface to perform authentication.
+scutclient --username <username> --password <password> [options...]
+ -i, --iface <ifname> Interface to perform authentication.
  -n, --dns <dns> DNS server address to be sent to UDP server.
- -t, --hostname <hostname>
+ -H, --hostname <hostname>
  -s, --udp-server <server>
  -c, --cli-version <client version>
+ -T, --net-time <time> The time you are allowed to access internet. e.g. 6:10
  -h, --hash <hash> DrAuthSvr.dll hash value.
- -E, --auth-exec <command> Command to be execute after EAP authentication success.
+ -E, --online-hook <command> Command to be execute after EAP authentication success.
+ -Q, --offline-hook <command> Command to be execute when you are forced offline at nignt.
  -D, --debug
  -o, --logoff
 ```
