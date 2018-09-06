@@ -650,8 +650,8 @@ int auth_8021x_Handler(uint8_t recv_data[]) {
 				recv_data);
 		// 一秒后才回复
 		sleep(AUTH_8021X_RECV_DELAY);
-		if (HookCmd) {
-			system(HookCmd);
+		if (OnlineHookCmd) {
+			system(OnlineHookCmd);
 		}
 		//使用心跳超时相关代码判断MISC_START_ALIVE是否超时
 		isNeedHeartBeat = 1;

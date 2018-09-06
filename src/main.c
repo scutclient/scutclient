@@ -20,7 +20,8 @@ static const struct option long_options[] = {
 	{"cli-version", required_argument,NULL, 'c'},
 	{"net-time", required_argument,NULL, 'T'},
 	{"hash", required_argument, NULL, 'h'},
-	{"auth-exec", required_argument, NULL, 'E'},
+	{"online-hook", required_argument, NULL, 'E'},
+	{"offline-hook", required_argument, NULL, 'Q'},
 	{"debug", optional_argument, NULL, 'D'},
 	{"logoff", no_argument, NULL, 'o'},
 	{NULL, no_argument, NULL, 0}
@@ -35,7 +36,8 @@ void PrintHelp(const char * argn) {
 		" -c, --cli-version <client version>\n"
 		" -T, --net-time <time> The time you are allowed to access internet. e.g. 6:10\n"
 		" -h, --hash <hash> DrAuthSvr.dll hash value.\n"
-		" -E, --auth-exec <command> Command to be execute after EAP authentication success.\n"
+		" -E, --online-hook <command> Command to be execute after EAP authentication success.\n"
+		" -Q, --offline-hook <command> Command to be execute when you are forced offline at nignt.\n"
 		" -D, --debug\n"
 		" -o, --logoff\n",
 		argn);
@@ -71,7 +73,10 @@ int main(int argc, char *argv[]) {
 			Password = optarg;
 			break;
 		case 'E':
-			HookCmd = optarg;
+			OnlineHookCmd = optarg;
+			break;
+		case 'Q':
+			OfflineHookCmd = optarg;
 			break;
 		case 'f':
 			strcpy(DeviceName, optarg);
@@ -157,6 +162,9 @@ int main(int argc, char *argv[]) {
 			cltime = localtime(&ctime);
 			if(((int)a_hour * 60 + a_minute) > ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) {
 				LogWrite(ALL, INF, "Waiting till %02hhd:%02hhd. Have a good sleep...", a_hour, a_minute);
+				if (OfflineHookCmd) {
+					system(OfflineHookCmd);
+				}
 				sleep((((int)a_hour * 60 + a_minute) - ((int)(cltime -> tm_hour) * 60 + cltime -> tm_min)) * 60 - cltime -> tm_sec);
 			} else {
 				break;
