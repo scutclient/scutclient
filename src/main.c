@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	time_t ctime;
 	struct tm * cltime;
 
-	while ((ch = getopt_long(argc, argv, "u:p:E:f:m:a:k:g:n:t:T:s:c:h:oD::",
+	while ((ch = getopt_long(argc, argv, "u:p:i:n:H:s:c:T:h:E:Q:D::o",
 			long_options, NULL)) != -1) {
 		switch (ch) {
 		case 'u':
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 		case 'Q':
 			OfflineHookCmd = optarg;
 			break;
-		case 'f':
+		case 'i':
 			strcpy(DeviceName, optarg);
 			break;
 		case 'n':
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 				exit(-1);
 			}
 			break;
-		case 't':
+		case 'H':
 			strcpy(HostName, optarg);
 			break;
 		case 's':
