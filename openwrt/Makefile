@@ -15,7 +15,7 @@ PKG_VERSION:=$(shell cd $(SRCDIR) && git describe --tags || echo "debug")
 PKG_RELEASE:=1
 PKG_UNPACK=$(CP) $(SRCDIR)/. $(PKG_BUILD_DIR)
 else
-PKG_VERSION:=3.1.1
+PKG_VERSION:=3.1.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
