@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 			OfflineHookCmd = optarg;
 			break;
 		case 'i':
-			strcpy(DeviceName, optarg);
+			strncpy(DeviceName, optarg, IFNAMSIZ);
 			break;
 		case 'n':
 			if (!inet_aton(optarg, &dns_ipaddr)) {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 'H':
-			strcpy(HostName, optarg);
+			strcpy(HostName, optarg, 32);
 			break;
 		case 's':
 			if (!inet_aton(optarg, &udpserver_ipaddr)) {
@@ -103,7 +103,13 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 'c':
-			hexStrToByte(optarg, buf, strlen(optarg));
+			if (strlen(optarg) >= 128) {
+				hexStrToByte(optarg, buf, 128);
+				Version_len = 64;
+			} else {
+				hexStrToByte(optarg, buf, strlen(optarg);
+				Version_len = strlen(optarg) / 2;
+			}
 			Version_len = strlen(optarg) / 2;
 			memcpy(Version, buf, Version_len);
 			break;
