@@ -13,13 +13,13 @@ char *Hash = "2ec15ad258aee9604b18f2f8114da38db16efd00";
 unsigned char Version[64] = { 0x44, 0x72, 0x43, 0x4f, 0x4d, 0x00, 0x96, 0x02, 0x2a };
 int Version_len = 9;
 
-void hexStrToByte(const char* source, unsigned char* dest, int sourceLen) {
-	short i;
+int hexStrToByte(const char* source, unsigned char* dest, int bufLen) {
+	int i;
 	unsigned char highByte, lowByte;
 
-	for (i = 0; i < sourceLen; i += 2) {
-		highByte = toupper(source[i]);
-		lowByte = toupper(source[i + 1]);
+	for (i = 0; source[i * 2] && source[i * 2 + 1] && (i < bufLen); i++) {
+		highByte = toupper(source[i * 2]);
+		lowByte = toupper(source[i * 2 + 1]);
 
 		if (highByte > 0x39) {
 			highByte -= 0x37;
@@ -33,8 +33,8 @@ void hexStrToByte(const char* source, unsigned char* dest, int sourceLen) {
 			lowByte -= 0x30;
 		}
 
-		dest[i / 2] = (highByte << 4) | lowByte;
+		dest[i] = (highByte << 4) | lowByte;
 	}
-	return;
+	return i;
 }
 

@@ -27,6 +27,6 @@ extern char *Hash;
 extern unsigned char Version[64];
 extern int Version_len;
 
-void hexStrToByte(const char* source, unsigned char* dest, int sourceLen);
+int hexStrToByte(const char* source, unsigned char* dest, int bufLen);
 #endif
 

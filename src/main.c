@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
 	int client = 1;
 	int ch, tmpdbg;
 	uint8_t a_hour = 255, a_minute = 255;
-	uint8_t buf[128];
 	int ret;
 	time_t ctime;
 	struct tm * cltime;
@@ -79,7 +78,7 @@ int main(int argc, char *argv[]) {
 			OfflineHookCmd = optarg;
 			break;
 		case 'i':
-			strcpy(DeviceName, optarg);
+			strncpy(DeviceName, optarg, IFNAMSIZ);
 			break;
 		case 'n':
 			if (!inet_aton(optarg, &dns_ipaddr)) {
@@ -88,7 +87,7 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 'H':
-			strcpy(HostName, optarg);
+			strncpy(HostName, optarg, 32);
 			break;
 		case 's':
 			if (!inet_aton(optarg, &udpserver_ipaddr)) {
@@ -103,9 +102,7 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 'c':
-			hexStrToByte(optarg, buf, strlen(optarg));
-			Version_len = strlen(optarg) / 2;
-			memcpy(Version, buf, Version_len);
+			Version_len = hexStrToByte(optarg, Version, sizeof(Version));
 			break;
 		case 'h':
 			Hash = optarg;
