@@ -44,6 +44,6 @@ int auth_UDP_Sender(uint8_t *send_data, int send_data_len);
 int Authentication(int client);
 int Drcom_UDP_Handler(uint8_t *recv_data);
 void initAuthenticationInfo();
-void loginToGetServerMAC(uint8_t recv_data[]);
+int loginToGetServerMAC(uint8_t recv_data[]);
 void printIfInfo();
 

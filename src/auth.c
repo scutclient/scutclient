@@ -347,7 +347,7 @@ void printIfInfo() {
  * 广播地址 (ff:ff:ff:ff:ff:ff)
  * 锐捷交换机 (01:d0:f8:00:00:03) PS:我校应该没有这货
  */
-void loginToGetServerMAC(uint8_t recv_data[]) {
+int loginToGetServerMAC(uint8_t recv_data[]) {
 	fd_set fdR;
 	struct timeval timeout = { AUTH_8021X_RECV_DELAY, 0 };
 	struct timeval tmp_timeout = timeout;
@@ -377,8 +377,8 @@ void loginToGetServerMAC(uint8_t recv_data[]) {
 					// 初始化服务器MAC地址
 					memcpy(EthHeader, recv_data + 6, 6);
 					if(auth_8021x_Handler(recv_data))
-						exit(EXIT_FAILURE); //这里不需要考虑重拨的问题，正常第一个请求是Identity，不会失败。
-					return;
+						return -EPROTO; // 正常第一个请求是Identity，不会失败。
+					return 0;
 				} else {
 					continue;
 				}
@@ -387,9 +387,7 @@ void loginToGetServerMAC(uint8_t recv_data[]) {
 		}
 		if (times <= 0) {
 			LogWrite(DOT1X, ERROR, "Error! No Response");
-			// 确保下线
-			auth_8021x_Logoff();
-			exit(EXIT_FAILURE);
+			return -ENETUNREACH;
 		}
 
 		times--;
@@ -406,6 +404,7 @@ void loginToGetServerMAC(uint8_t recv_data[]) {
 			LogWrite(DOT1X, INF, "Client: Broadcast Start.");
 		}
 	}
+	return 0;
 }
 
 int Authentication(int client) {
@@ -442,7 +441,10 @@ int Authentication(int client) {
 		goto ERR1;
 	}
 
-	loginToGetServerMAC(recv_8021x_buf);
+	ret = loginToGetServerMAC(recv_8021x_buf);
+	if(ret < 0)
+		goto ERR2;
+
 	// 计时心跳时间
 	BaseHeartbeatTime = time(NULL);
 	while (resev) {
@@ -503,6 +505,7 @@ int Authentication(int client) {
 	success_8021x = 0;
 	resev = 0;
 	lastHBDone = 1;
+ERR2:
 	close(auth_udp_sock);
 	auth_8021x_Logoff();
 ERR1:
