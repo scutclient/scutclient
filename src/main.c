@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
 	int ch, tmpdbg;
 	uint8_t a_hour = 255, a_minute = 255;
 	int ret;
+	unsigned int retry_time = 1;
 	time_t ctime;
 	struct tm * cltime;
 
@@ -152,7 +153,13 @@ int main(int argc, char *argv[]) {
 	while(1) {
 		ret = Authentication(client);
 		if(ret == 1) {
+			retry_time = 1;
 			LogWrite(ALL, INF, "Restart authentication.");
+		} else if(ret == -ENETUNREACH) {
+			LogWrite(ALL, INF, "Retry in %d secs.", retry_time);
+			sleep(retry_time);
+			if (retry_time <= 256)
+				retry_time *= 2;
 		} else if(timeNotAllowed && (a_minute < 60)) {
 			timeNotAllowed = 0;
 			ctime = time(NULL);
