@@ -45,9 +45,10 @@ scutclient_load_config() {
 
 scutclient_start_instance() {
 	local cfg="$1"
-	local username password interface ifname
+	local username password interface device ifname
 	scutclient_validate_scutclient "$cfg"
-	uci_validate_section network interface "$interface" 'ifname:string'
+	uci_validate_section network interface "$interface" 'ifname:string' 'device:string'
+	[ -z "$device" ] || ifname=$device
 	procd_open_instance "scutclient_${cfg}_${interface}"
 	procd_set_param stdout 1
 	procd_set_param stderr 1
