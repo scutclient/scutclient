@@ -57,6 +57,14 @@ The compiled ipk will be placed under **bin** directory.
 
 Select **scutclient** under **Network** tab and start building your firmware.
 
+## Use GitHub Actions to build
+1. First fork this repo.
+2. Go to `Actions` tab, select `Build`.
+3. Click `Run workflow`.
+4. Input target SDK URL.
+5. Click `Run Workflow` button and wait for it to finish.
+6. Check out release and download your ipk.
+
 # Usage
 ```bash
 scutclient --username <username> --password <password> [options...]

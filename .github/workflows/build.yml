@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+    inputs:
+      sdk_url:
+        description: 'SDK URL for scutclient to build'
+        required: true
+        default: 'https://downloads.openwrt.org/releases/18.06.8/targets/ramips/mt7620/openwrt-sdk-18.06.8-ramips-mt7620_gcc-7.3.0_musl.Linux-x86_64.tar.xz'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Build
+        id: build
+        run: |
+          sudo apt install build-essential cmake libncurses5-dev
+          mkdir build && cd build
+          wget ${{ github.event.inputs.sdk_url }}
+          tar -Jxvf $(ls)
+          rm *.xz
+          echo "::set-output name=release_tag_p1::$(ls)"
+          mv $(ls) openwrt
+          mkdir openwrt/package/scutclient
+          cp ../openwrt/Makefile openwrt/package/scutclient
+          cd openwrt
+          make defconfig
+          make package/scutclient/compile V=s
+          cp ./bin/packages/*/*/*.ipk ..
+          cd ..
+          echo "::set-output name=release_tag_p2::$(ls *.ipk)"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.build.outputs.release_tag_p1 }}--${{ steps.build.outputs.release_tag_p2 }}
+          files: build/*.ipk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
